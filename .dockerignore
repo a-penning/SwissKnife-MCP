@@ -1,0 +1,16 @@
+node_modules
+dist
+*.tgz
+.git
+.github
+docs
+tests
+coverage
+.claude
+# Trim the build context. NOTE: tsconfig.json + tsup.config.ts are required by
+# the build stage, so they must NOT be listed here.
+*.md
+LICENSE
+biome.json
+vitest.config.ts
+.gitignore

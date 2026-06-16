@@ -1,0 +1,82 @@
+{
+  "name": "swissknife-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HTTP MCP server of deterministic developer utilities",
+  "license": "MIT",
+  "author": "a-penning",
+  "homepage": "https://github.com/a-penning/SwissKnife-MCP#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/a-penning/SwissKnife-MCP.git"
+  },
+  "bugs": {
+    "url": "https://github.com/a-penning/SwissKnife-MCP/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "developer-tools",
+    "cli",
+    "jwt",
+    "hashing",
+    "encoding"
+  ],
+  "type": "module",
+  "bin": {
+    "swissknife-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "PORT=6789 tsx watch src/index.ts",
+    "build": "tsup",
+    "prepare": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "gen:registry": "node scripts/gen-registry.mjs",
+    "predev": "npm run gen:registry",
+    "prebuild": "npm run gen:registry",
+    "pretest": "npm run gen:registry",
+    "prelint": "npm run gen:registry",
+    "pretypecheck": "npm run gen:registry",
+    "verify": "npm run lint && npm run typecheck && npm run build && npm test",
+    "healthcheck": "for i in 1 2 3 4 5 6 7 8; do curl -fsS http://127.0.0.1:12345/healthz 2>/dev/null && echo && exit 0; sleep 1; done; echo 'healthcheck FAILED: /healthz unreachable after 8s' >&2; exit 1",
+    "deploy": "docker compose up -d --build --force-recreate && npm run healthcheck"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "cron-parser": "^5.5.0",
+    "diff": "^9.0.0",
+    "express": "^5.2.1",
+    "fast-xml-parser": "^5.8.0",
+    "ipaddr.js": "^2.4.0",
+    "jose": "^6.2.3",
+    "nanoid": "^5.1.11",
+    "papaparse": "^5.5.3",
+    "quickjs-emscripten": "^0.32.0",
+    "smol-toml": "^1.6.1",
+    "ulid": "^3.0.2",
+    "undici": "^7.28.0",
+    "whoiser": "^2.0.0-beta.10",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.3",
+    "@types/papaparse": "^5.5.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}

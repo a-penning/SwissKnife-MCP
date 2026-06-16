@@ -1,0 +1,23 @@
+node_modules/
+dist/
+*.tgz
+coverage/
+*.tsbuildinfo
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# Editor / OS / agent state
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.log
+npm-debug.log*
+.claude/
+
+# Generated at test-time by tests/fixtures/generate-cert.ts
+tests/fixtures/test-cert.pem

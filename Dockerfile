@@ -1,7 +1,7 @@
 # Pinned by digest so a rebuild can't silently pull a different base image.
 # Refresh with: docker buildx imagetools inspect node:22-alpine (Dependabot's
 # docker ecosystem keeps this current too).
-FROM node:22-alpine@sha256:9385cd9f3001dfc3431e8ead12c43e9e1f87cc1b9b5c6cfd0f73865d405b27c4 AS build
+FROM node:26-alpine@sha256:9c0e1e52125d6b67d505cf75b4880fcf1290ccea5c480849910e1d57b2cf72b5 AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --ignore-scripts
@@ -10,7 +10,7 @@ COPY scripts ./scripts
 COPY src ./src
 RUN npm run build && npm prune --omit=dev
 
-FROM node:22-alpine@sha256:9385cd9f3001dfc3431e8ead12c43e9e1f87cc1b9b5c6cfd0f73865d405b27c4
+FROM node:26-alpine@sha256:9c0e1e52125d6b67d505cf75b4880fcf1290ccea5c480849910e1d57b2cf72b5
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=12345
 COPY --from=build /app/dist ./dist

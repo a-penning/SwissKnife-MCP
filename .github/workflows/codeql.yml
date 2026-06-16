@@ -1,0 +1,29 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, so newly-disclosed query packs run against the unchanged default branch.
+    - cron: "27 4 * * 1"
+
+jobs:
+  analyze:
+    # Code scanning uploads require a public repo (or GHAS on a private one);
+    # skip entirely while private so the run doesn't fail on the SARIF upload.
+    # Note: on `schedule` the event payload may omit repository.visibility, so
+    # the weekly run only fires reliably via push/pull_request once public.
+    if: github.event.repository.visibility == 'public'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v4

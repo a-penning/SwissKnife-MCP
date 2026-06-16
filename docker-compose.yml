@@ -1,0 +1,10 @@
+services:
+  swissknife:
+    build: .
+    ports:
+      # Publish to loopback only — the server is unauthenticated and exposes
+      # outbound primitives (http/dns/inspect). Change to "0.0.0.0:12345:12345"
+      # (and set SWISSKNIFE_BLOCK_PRIVATE_NETWORKS + a hostname allow-list) only
+      # when fronting it with an authenticating proxy.
+      - "127.0.0.1:12345:12345"
+    restart: unless-stopped

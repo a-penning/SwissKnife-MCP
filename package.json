@@ -62,7 +62,7 @@
     "nanoid": "^5.1.11",
     "papaparse": "^5.5.3",
     "quickjs-emscripten": "^0.32.0",
-    "smol-toml": "^1.6.1",
+    "smol-toml": "^1.7.0",
     "ulid": "^3.0.2",
     "undici": "^8.5.0",
     "whoiser": "^2.0.0-beta.10",

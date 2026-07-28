@@ -58,7 +58,7 @@
     "express": "^5.2.1",
     "fast-xml-parser": "^5.9.0",
     "ipaddr.js": "^2.4.0",
-    "jose": "^6.2.3",
+    "jose": "^6.2.4",
     "nanoid": "^5.1.11",
     "papaparse": "^5.5.3",
     "quickjs-emscripten": "^0.32.0",

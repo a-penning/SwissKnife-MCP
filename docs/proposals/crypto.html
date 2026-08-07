@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposal: crypto tool — SwissKnife</title>
+<style>
+  :root {
+    --bg: #fbfbf9;
+    --fg: #1c1c1c;
+    --muted: #5b5b5b;
+    --accent: #b04a2f;
+    --border: #e2e0db;
+    --code-bg: #f1efea;
+    --code-border: #d8d5cc;
+    --table-stripe: #f6f4ef;
+    --warn-bg: #fdf3df;
+    --warn-border: #e3c87a;
+    --refuse-bg: #fbe6e0;
+    --refuse-border: #d99b8a;
+    --ok-bg: #e6efe1;
+    --ok-border: #a4c498;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #181816;
+      --fg: #ececea;
+      --muted: #9d9c98;
+      --accent: #e08a72;
+      --border: #2e2d2a;
+      --code-bg: #232220;
+      --code-border: #34332f;
+      --table-stripe: #1f1e1c;
+      --warn-bg: #3a311a;
+      --warn-border: #806a35;
+      --refuse-bg: #3a221c;
+      --refuse-border: #875147;
+      --ok-bg: #243024;
+      --ok-border: #4c7048;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 6rem;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  header .eyebrow {
+    font: 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+  }
+  h1 {
+    font-size: 2rem;
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.01em;
+  }
+  h1 code { font-size: 0.85em; }
+  h2 {
+    font-size: 1.35rem;
+    margin: 2.5rem 0 0.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    letter-spacing: -0.005em;
+  }
+  h2:first-of-type { border-top: 0; padding-top: 0; }
+  h3 {
+    font-size: 1.05rem;
+    margin: 1.75rem 0 0.5rem;
+    color: var(--fg);
+  }
+  h4 {
+    font-size: 0.95rem;
+    margin: 1.25rem 0 0.4rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  p, ul, ol { margin: 0.75rem 0; }
+  ul, ol { padding-left: 1.5rem; }
+  li { margin: 0.25rem 0; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
+  a:hover { border-bottom-color: var(--accent); }
+  strong { font-weight: 600; }
+  code, pre {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  code {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 4px;
+    padding: 0.05em 0.35em;
+    font-size: 0.88em;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 6px;
+    padding: 0.9rem 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    margin: 0.75rem 0 1.25rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  pre.json { white-space: pre; word-wrap: normal; }
+  pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    font-size: inherit;
+  }
+  .status {
+    display: inline-block;
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 4px;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.88rem;
+    color: var(--fg);
+    margin-bottom: 0.5rem;
+  }
+  .description-box {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    font-size: 0.86rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 1rem 0 1.5rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    margin: 1rem 0 1.25rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    font-weight: 600;
+    background: var(--table-stripe);
+    border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) td { background: var(--table-stripe); }
+  td code, th code { font-size: 0.85em; }
+  .tag {
+    display: inline-block;
+    font-size: 0.78rem;
+    padding: 0.08em 0.5em;
+    border-radius: 4px;
+    border: 1px solid;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+  .tag-ok { background: var(--ok-bg); border-color: var(--ok-border); }
+  .tag-warn { background: var(--warn-bg); border-color: var(--warn-border); }
+  .tag-refuse { background: var(--refuse-bg); border-color: var(--refuse-border); }
+  .toc {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    font-size: 0.92rem;
+    margin: 1rem 0 2rem;
+  }
+  .toc strong { display: block; margin-bottom: 0.4rem; color: var(--muted); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .toc ol { margin: 0; padding-left: 1.25rem; columns: 2; column-gap: 2rem; }
+  .toc li { margin: 0.1rem 0; }
+  @media (max-width: 600px) {
+    .toc ol { columns: 1; }
+    main { padding: 1.5rem 1rem 3rem; }
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.2rem; }
+    table { font-size: 0.85rem; }
+    th, td { padding: 0.4rem 0.5rem; }
+  }
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2rem 0; }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <p class="eyebrow">Design Proposal · SwissKnife MCP</p>
+  <h1>Proposal: <code>crypto</code> tool</h1>
+  <p class="status"><strong>Status:</strong> Design proposal — not yet implemented. Nothing in this file describes shipped behaviour.</p>
+  <p>A general-purpose cryptographic primitive tool: symmetric AEAD, asymmetric encryption / signing / key generation, password-based and key-based derivation, key-format conversion, and OpenPGP. Eight actions. Where an operation has variants, <code>method</code> takes the algorithm name directly (<code>"aes-256-gcm"</code>, <code>"rsa-oaep"</code>, <code>"ed25519"</code>, <code>"pgp"</code>, …) — no abstract <code>"symmetric"</code> / <code>"asymmetric"</code> layer, no parallel <code>algorithm</code> field.</p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#why">Why this tool</a></li>
+    <li><a href="#mcp-description">MCP description (what the LLM sees)</a></li>
+    <li><a href="#non-goals">Non-goals</a></li>
+    <li><a href="#actions">Action surface</a></li>
+    <li><a href="#algorithms">Algorithm support</a></li>
+    <li><a href="#examples">API examples</a></li>
+    <li><a href="#keys">Key handling</a></li>
+    <li><a href="#errors">Error model</a></li>
+    <li><a href="#limits">Limits &amp; caps</a></li>
+    <li><a href="#security">Security posture</a></li>
+    <li><a href="#impl">Implementation notes</a></li>
+    <li><a href="#tests">Test strategy</a></li>
+    <li><a href="#open">Open questions</a></li>
+    <li><a href="#rollout">Rollout</a></li>
+    <li><a href="#refs">References</a></li>
+  </ol>
+</nav>
+
+<h2 id="why">Why this tool</h2>
+<p>SwissKnife's existing crypto surface is fragmentary: <code>hash</code> does digests and HMAC, <code>jwt</code> does one signed-token format, <code>id</code> generates passwords and UUIDs. There is no way to encrypt or decrypt arbitrary data, generate a keypair, sign or verify outside the JWT envelope, derive a key from a password, convert keys between formats, or work with OpenPGP at all.</p>
+<p>These are the operations an LLM is most likely to <em>hallucinate</em> without a tool — wrong nonce sizes, made-up base64 ciphertexts, invented PGP fingerprints. The <code>script</code> VM cannot fill the gap: it is sandboxed without <code>node:crypto</code> or WebCrypto, so encryption is genuinely unreachable from user code. Primitive-capability gap, not an ergonomic one.</p>
+<p>OpenPGP is current and load-bearing in 2026 — Git commit signing, release-artifact verification (<code>.asc</code> on tarballs, npm/PyPI provenance), distro package signing, <code>pass</code>-based secret management, SOPS-encrypted secrets in Git. The user-facing primitives are the <em>same</em> shape whether the envelope is raw or PGP, so PGP rides on the existing actions via <code>method: "pgp"</code> rather than splitting its own.</p>
+
+<h2 id="mcp-description">MCP description (what the LLM sees)</h2>
+<p>This is the description string the tool ships with — the single most important field, because it's how a model decides whether and how to call the tool (per <code>docs/TOOLS.md</code>). Every supported method is listed here with its required parameters and defaults. Anything not listed isn't reachable — there's no hidden fallback path.</p>
+
+<div class="description-box">General-purpose crypto primitives. Eight actions. Where an operation has variants, `method` names the algorithm directly — no separate `algorithm` field.
+
+encrypt — produces ciphertext.
+  "aes-256-gcm" (default) / "aes-128-gcm" / "chacha20-poly1305" — AEAD. Needs `key`, `plaintext`; auto-generates 12-byte `nonce` unless supplied; optional `aad`. Reusing a (key, nonce) pair on GCM catastrophically breaks confidentiality.
+  "rsa-oaep" — needs `publicKey`, `plaintext`; `oaepHash` default "sha256"; plaintext capped by modulus.
+  "pgp" — needs `message` plus `recipients` (array of PGP public-key blocks) OR `passphrase` (symmetric). Optional `signingKey` + `signingPassphrase`, `armor` (default true), `preferredCipher`.
+
+decrypt — mirrors encrypt's methods (swap public/private, swap ciphertext/plaintext). All failure modes return `decryption_failed` — single bucket; failure mode isn't leaked.
+
+sign — produces a detached signature.
+  "ed25519" / "ecdsa" / "rsa-pss" (default for RSA) / "rsa-pkcs1" (legacy). Needs `privateKey`, `message`; `hash` default "sha256".
+  "pgp" — needs `privateKey`, `passphrase`, `message`. Optional `type`: "detached" (default) / "cleartext" / "inline".
+
+verify — failure → `{valid: false}`, NOT an error.
+  Asymmetric: needs `publicKey`, `message`, `signature`.
+  "pgp" — needs `signature` plus `publicKeys` OR `keyserverUrl` (HKPS/VKS, SSRF-guarded). Detached also needs `message`. Refuses SHA-1 / MD5 signatures unless `acceptLegacyHash: true`.
+
+generate
+  "bytes" — random symmetric bytes; needs `byteLength`.
+  "rsa" / "ec" / "ed25519" (default) / "x25519" / "secp256k1" — raw keypair. RSA: `modulusLength` (default 3072). EC: `curve` (P-256/384/521).
+  "pgp" — OpenPGP keypair; needs `userIds`, `passphrase`. Defaults Ed25519+X25519, v6 keys, no expiry.
+
+derive
+  "argon2id" (default) / "scrypt" / "pbkdf2" — password-based. Needs `password`, `keyLength`; auto-generates `salt` (always returned).
+  "hkdf" — from key material; needs `ikm`, `keyLength`; optional `salt`, `info`.
+  "ecdh" — agreement (X25519 / ECDH-P256/384/521). Needs `privateKey`, `peerPublicKey`. Output is raw shared secret — chain with hkdf before use.
+
+inspect — auto-detects input (PEM, DER, JWK, PGP armored, PGP binary via inputEncoding:"base64"). Returns type, fingerprint, expiry, user IDs, subkeys. Public metadata only; never echoes private material.
+
+convert — raw key format conversion: PEM ↔ DER ↔ JWK. Auto-detects `from`; `to` is explicit. PGP keys don't participate.
+
+Anything not listed returns `unsupported_algorithm`. Notable refusals: AES-CBC/CTR (no AEAD), RSA-PKCS1-v1_5 encryption, MD5/SHA-1 for new signing.
+
+Private keys and passphrases passed in are never echoed back. Private material is only returned by `generate` and `convert`. All randomness from OS CSPRNG.</div>
+
+<p>(This is the design's view of the description; the implementation will replicate it verbatim in <code>src/tools/crypto.ts</code>. A drift test in <code>tests/conformance.test.ts</code> can pin the two together if useful.)</p>
+
+<h2 id="non-goals">Non-goals</h2>
+<table>
+  <thead><tr><th style="width:35%">Capability</th><th>Lives in / reason</th></tr></thead>
+  <tbody>
+    <tr><td>Plain digests, HMAC</td><td><code>hash</code></td></tr>
+    <tr><td>JWT sign / verify / decode</td><td><code>jwt</code></td></tr>
+    <tr><td>Password &amp; identifier <em>string</em> generation</td><td><code>id</code></td></tr>
+    <tr><td>Base64 / hex / radix encoding</td><td><code>encode</code></td></tr>
+    <tr><td>Certificate parsing, TLS handshake, WHOIS</td><td>the existing <code>inspect</code> tool</td></tr>
+    <tr><td>Key storage, key rotation, key vault, GnuPG agent / keyring</td><td>Stateful — violates the suite's stateless contract.</td></tr>
+    <tr><td>Web-of-trust certifications, revocations, trust signatures</td><td>Long-lived state and policy decisions; not a one-shot tool concern.</td></tr>
+    <tr><td>Smartcard / Yubikey operations</td><td>Hardware, out of scope.</td></tr>
+    <tr><td>Encrypted-at-rest container formats (age, JWE-files)</td><td>Tier 2 — revisit after v1 lands.</td></tr>
+    <tr><td>CSR / X.509 certificate issuance</td><td>Tier 2 — possibly subsumes the existing <code>inspect</code> tool's cert side.</td></tr>
+    <tr><td>Custom protocol handshakes (Noise, MLS, Signal)</td><td>Out of scope.</td></tr>
+    <tr><td>ECIES / sealed-box as a single action</td><td>Compose: <code>generate method:"x25519"</code> → <code>derive method:"ecdh"</code> → <code>derive method:"hkdf"</code> → <code>encrypt method:"aes-256-gcm"</code>. Avoids owning a KDF/AEAD/format choice nobody agrees on.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="actions">Action surface</h2>
+<p>Eight actions. Method values listed by action below — each value pins exactly one parameter shape (Zod <code>discriminatedUnion</code> at the schema boundary).</p>
+<table>
+  <thead><tr><th style="width:14%">Action</th><th style="width:46%"><code>method</code> values</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>encrypt</code></td>
+      <td><code>aes-256-gcm</code> · <code>aes-128-gcm</code> · <code>chacha20-poly1305</code> · <code>rsa-oaep</code> · <code>pgp</code></td>
+      <td>Produce ciphertext.</td>
+    </tr>
+    <tr>
+      <td><code>decrypt</code></td>
+      <td>same set as <code>encrypt</code></td>
+      <td>Recover plaintext.</td>
+    </tr>
+    <tr>
+      <td><code>sign</code></td>
+      <td><code>ed25519</code> · <code>ecdsa</code> · <code>rsa-pss</code> · <code>rsa-pkcs1</code> · <code>pgp</code></td>
+      <td>Produce a detached / cleartext / inline signature.</td>
+    </tr>
+    <tr>
+      <td><code>verify</code></td>
+      <td>same set as <code>sign</code></td>
+      <td>Verify a signature. Failure → <code>{valid: false}</code>, not an error.</td>
+    </tr>
+    <tr>
+      <td><code>generate</code></td>
+      <td><code>bytes</code> · <code>rsa</code> · <code>ec</code> · <code>ed25519</code> · <code>x25519</code> · <code>secp256k1</code> · <code>pgp</code></td>
+      <td>Produce key material.</td>
+    </tr>
+    <tr>
+      <td><code>derive</code></td>
+      <td><code>argon2id</code> · <code>scrypt</code> · <code>pbkdf2</code> · <code>hkdf</code> · <code>ecdh</code></td>
+      <td>Derive a key from a password, key material, or DH agreement.</td>
+    </tr>
+    <tr>
+      <td><code>inspect</code></td>
+      <td>—</td>
+      <td>Auto-detect input format and describe (PEM, DER, JWK, PGP armored, PGP binary).</td>
+    </tr>
+    <tr>
+      <td><code>convert</code></td>
+      <td>—</td>
+      <td>Raw asymmetric key format conversion (PEM ↔ DER ↔ JWK).</td>
+    </tr>
+  </tbody>
+</table>
+<p>No <code>outputSchema</code> — the result shape varies per <code>action</code> and <code>method</code>; a discriminated-union schema would have to track every branch.</p>
+
+<h2 id="algorithms">Algorithm support</h2>
+
+<h3>Symmetric AEAD — <code>encrypt</code> / <code>decrypt</code></h3>
+<table>
+  <thead><tr><th><code>method</code></th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>aes-256-gcm</code></td><td><span class="tag tag-ok">Supported (default)</span></td><td>12-byte nonce, 16-byte tag.</td></tr>
+    <tr><td><code>aes-128-gcm</code></td><td><span class="tag tag-ok">Supported</span></td><td>same nonce / tag sizes.</td></tr>
+    <tr><td><code>chacha20-poly1305</code></td><td><span class="tag tag-ok">Supported</span></td><td>12-byte nonce, 32-byte key.</td></tr>
+  </tbody>
+</table>
+
+<h3>Asymmetric encryption — <code>encrypt</code> / <code>decrypt</code></h3>
+<table>
+  <thead><tr><th><code>method</code></th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>rsa-oaep</code></td><td><span class="tag tag-ok">Supported</span></td><td>OAEP hash defaults to SHA-256; SHA-384 / SHA-512 also accepted.</td></tr>
+  </tbody>
+</table>
+<p>ECIES / sealed-box is not a single action — compose <code>derive ecdh</code> + <code>derive hkdf</code> + <code>encrypt aes-256-gcm</code> when you need hybrid public-key encryption.</p>
+
+<h3>Signature schemes — <code>sign</code> / <code>verify</code></h3>
+<table>
+  <thead><tr><th><code>method</code></th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>ed25519</code></td><td><span class="tag tag-ok">Supported</span></td><td>Default for Ed25519 keys. No hash parameter.</td></tr>
+    <tr><td><code>ecdsa</code></td><td><span class="tag tag-ok">Supported</span></td><td>SHA-256 / SHA-384 / SHA-512; <code>hash</code> default "sha256". For secp256k1 keys see open question #1.</td></tr>
+    <tr><td><code>rsa-pss</code></td><td><span class="tag tag-ok">Supported (default for new RSA signing)</span></td><td>SHA-256 / SHA-384 / SHA-512.</td></tr>
+    <tr><td><code>rsa-pkcs1</code></td><td><span class="tag tag-warn">Supported with warning</span></td><td>Prefer rsa-pss for new code.</td></tr>
+  </tbody>
+</table>
+
+<h3>Key generation — <code>generate</code></h3>
+<table>
+  <thead><tr><th><code>method</code></th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>bytes</code></td><td><span class="tag tag-ok">Supported</span></td><td>Random symmetric key bytes. <code>byteLength</code> typically 16 / 24 / 32.</td></tr>
+    <tr><td><code>rsa</code></td><td><span class="tag tag-ok">Supported</span></td><td><code>modulusLength</code> 2048 / 3072 (default) / 4096; max 8192.</td></tr>
+    <tr><td><code>ec</code></td><td><span class="tag tag-ok">Supported</span></td><td><code>curve</code> P-256 / P-384 / P-521.</td></tr>
+    <tr><td><code>ed25519</code></td><td><span class="tag tag-ok">Supported (default)</span></td><td>For raw signing keys.</td></tr>
+    <tr><td><code>x25519</code></td><td><span class="tag tag-ok">Supported</span></td><td>For raw key-agreement keys.</td></tr>
+    <tr><td><code>secp256k1</code></td><td><span class="tag tag-ok">Supported</span></td><td>Bitcoin / Ethereum use cases.</td></tr>
+    <tr><td><code>pgp</code></td><td><span class="tag tag-ok">Supported</span></td><td>OpenPGP keypair, Ed25519+X25519 default, v6 keys by default.</td></tr>
+  </tbody>
+</table>
+
+<h3>Derivation — <code>derive</code></h3>
+<table>
+  <thead><tr><th><code>method</code></th><th>Status</th><th>Defaults / caps</th></tr></thead>
+  <tbody>
+    <tr><td><code>argon2id</code></td><td><span class="tag tag-ok">Supported (default for passwords)</span></td><td>m=64 MiB, t=3, p=4. Caps: 1 GiB / 10 / 16.</td></tr>
+    <tr><td><code>scrypt</code></td><td><span class="tag tag-ok">Supported</span></td><td>N=2<sup>15</sup>, r=8, p=1. Caps: N≤2<sup>20</sup>, mem ≤ 256 MiB.</td></tr>
+    <tr><td><code>pbkdf2</code></td><td><span class="tag tag-ok">Supported</span></td><td>SHA-256, 600k iterations (OWASP). Cap 10M.</td></tr>
+    <tr><td><code>hkdf</code></td><td><span class="tag tag-ok">Supported</span></td><td>SHA-256 default; SHA-384 / SHA-512 also.</td></tr>
+    <tr><td><code>ecdh</code></td><td><span class="tag tag-ok">Supported</span></td><td>X25519 default; ECDH P-256 / P-384 / P-521 also. Returns raw shared secret — chain with <code>hkdf</code>.</td></tr>
+  </tbody>
+</table>
+
+<h3>OpenPGP — <code>encrypt</code> / <code>decrypt</code> / <code>sign</code> / <code>verify</code> / <code>generate</code> <code>method:"pgp"</code></h3>
+<h4>Symmetric ciphers (inside the PGP envelope, picked by <code>preferredCipher</code>)</h4>
+<table>
+  <thead><tr><th>Algorithm</th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>AES-256-OCB</td><td><span class="tag tag-ok">Default for v6 keys</span></td><td>RFC 9580 AEAD.</td></tr>
+    <tr><td>AES-128/192/256-GCM</td><td><span class="tag tag-ok">Supported</span></td><td>RFC 9580 AEAD.</td></tr>
+    <tr><td>AES-128/192/256-CFB</td><td><span class="tag tag-ok">Supported</span></td><td>RFC 4880 legacy (MDC-protected). Needed for v4 interop.</td></tr>
+    <tr><td>ChaCha20-Poly1305</td><td><span class="tag tag-ok">Supported</span></td><td>RFC 9580 AEAD.</td></tr>
+  </tbody>
+</table>
+<h4>Public-key algorithms</h4>
+<table>
+  <thead><tr><th>Algorithm</th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>EdDSA Ed25519</td><td><span class="tag tag-ok">Supported (default for new keys)</span></td><td>RFC 9580.</td></tr>
+    <tr><td>ECDH Curve25519</td><td><span class="tag tag-ok">Supported (default for new keys)</span></td><td>RFC 9580.</td></tr>
+    <tr><td>ECDSA / ECDH on NIST P-256 / P-384 / P-521</td><td><span class="tag tag-ok">Supported</span></td><td></td></tr>
+    <tr><td>RSA encrypt + sign</td><td><span class="tag tag-ok">Supported</span></td><td>≥ 2048 bits; 3072+ recommended.</td></tr>
+    <tr><td>DSA</td><td><span class="tag tag-warn">Verify-only (legacy)</span></td><td>Refuse to <em>sign</em> with DSA.</td></tr>
+    <tr><td>ElGamal</td><td><span class="tag tag-warn">Decrypt-only (legacy)</span></td><td>Refuse to encrypt to new ElGamal subkeys.</td></tr>
+  </tbody>
+</table>
+<h4>Hash &amp; compression</h4>
+<table>
+  <thead><tr><th>Algorithm</th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>SHA-256 / SHA-384 / SHA-512</td><td><span class="tag tag-ok">Supported</span></td><td></td></tr>
+    <tr><td>SHA-1 (verify only)</td><td><span class="tag tag-warn">Gated</span></td><td>Requires <code>acceptLegacyHash: true</code>. Never permitted for new signing.</td></tr>
+    <tr><td>zlib, zip, uncompressed</td><td><span class="tag tag-ok">Supported</span></td><td></td></tr>
+  </tbody>
+</table>
+
+<h2 id="examples">API examples</h2>
+<p>Illustrative shapes, not committed wire format.</p>
+
+<h3><code>encrypt method:"aes-256-gcm"</code></h3>
+<pre class="json"><code>{
+  "action": "encrypt",
+  "method": "aes-256-gcm",
+  "key": "base64:7E2j…",
+  "plaintext": "hello",
+  "aad": "optional",
+  "outputEncoding": "base64"
+}</code></pre>
+<p>Returns <code>{ ciphertext, nonce, encoding }</code>. Nonce auto-generated unless explicitly passed.</p>
+
+<h3><code>encrypt method:"rsa-oaep"</code></h3>
+<pre class="json"><code>{
+  "action": "encrypt",
+  "method": "rsa-oaep",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\n…",
+  "plaintext": "session key bytes",
+  "oaepHash": "sha256",
+  "inputEncoding": "base64",
+  "outputEncoding": "base64"
+}</code></pre>
+
+<h3><code>encrypt method:"pgp"</code> — to recipients</h3>
+<pre class="json"><code>{
+  "action": "encrypt",
+  "method": "pgp",
+  "message": "secret payload",
+  "recipients": ["-----BEGIN PGP PUBLIC KEY BLOCK-----\n…"],
+  "signingKey": "-----BEGIN PGP PRIVATE KEY BLOCK-----\n…",
+  "signingPassphrase": "…",
+  "armor": true,
+  "preferredCipher": "aes-256-ocb"
+}</code></pre>
+
+<h3><code>encrypt method:"pgp"</code> — symmetric (passphrase)</h3>
+<pre class="json"><code>{
+  "action": "encrypt",
+  "method": "pgp",
+  "message": "secret payload",
+  "passphrase": "correct horse battery staple",
+  "armor": true
+}</code></pre>
+
+<h3><code>decrypt method:"aes-256-gcm"</code></h3>
+<pre class="json"><code>{
+  "action": "decrypt",
+  "method": "aes-256-gcm",
+  "key": "base64:7E2j…",
+  "ciphertext": "9k2L…",
+  "nonce": "Yx3a…",
+  "aad": "optional"
+}</code></pre>
+
+<h3><code>decrypt method:"pgp"</code></h3>
+<pre class="json"><code>{
+  "action": "decrypt",
+  "method": "pgp",
+  "ciphertext": "-----BEGIN PGP MESSAGE-----\n…",
+  "privateKey": "-----BEGIN PGP PRIVATE KEY BLOCK-----\n…",
+  "passphrase": "…",
+  "verificationKeys": ["-----BEGIN PGP PUBLIC KEY BLOCK-----\n…"]
+}</code></pre>
+
+<h3><code>sign method:"ed25519"</code></h3>
+<pre class="json"><code>{
+  "action": "sign",
+  "method": "ed25519",
+  "privateKey": "-----BEGIN PRIVATE KEY-----\n…",
+  "message": "payload",
+  "outputEncoding": "base64"
+}</code></pre>
+
+<h3><code>sign method:"pgp"</code></h3>
+<pre class="json"><code>{
+  "action": "sign",
+  "method": "pgp",
+  "privateKey": "-----BEGIN PGP PRIVATE KEY BLOCK-----\n…",
+  "passphrase": "…",
+  "message": "release v1.2.3",
+  "type": "detached",
+  "armor": true
+}</code></pre>
+
+<h3><code>verify method:"pgp"</code> — keyserver lookup</h3>
+<pre class="json"><code>{
+  "action": "verify",
+  "method": "pgp",
+  "message": "release v1.2.3",
+  "signature": "-----BEGIN PGP SIGNATURE-----\n…",
+  "keyserverUrl": "https://keys.openpgp.org"
+}</code></pre>
+<p>Returns <code>{ valid, signedBy: {fingerprint, keyId, userIds, keySource, keyFetchedFrom}, createdAt, hash }</code>. Keyserver fetch goes through <code>src/lib/ssrf.ts</code>.</p>
+
+<h3><code>generate method:"bytes"</code></h3>
+<pre class="json"><code>{ "action": "generate", "method": "bytes", "byteLength": 32, "outputEncoding": "base64" }</code></pre>
+
+<h3><code>generate method:"ed25519"</code></h3>
+<pre class="json"><code>{ "action": "generate", "method": "ed25519" }</code></pre>
+
+<h3><code>generate method:"pgp"</code></h3>
+<pre class="json"><code>{
+  "action": "generate",
+  "method": "pgp",
+  "userIds": [{ "name": "Alice", "email": "alice@example.com" }],
+  "passphrase": "…",
+  "type": "ed25519",
+  "encryptionSubkey": "x25519",
+  "keyVersion": 6,
+  "expiresIn": "P2Y"
+}</code></pre>
+
+<h3><code>derive method:"argon2id"</code></h3>
+<pre class="json"><code>{
+  "action": "derive",
+  "method": "argon2id",
+  "password": "correct horse battery staple",
+  "salt": "base64:…",
+  "keyLength": 32,
+  "params": { "memory": 65536, "iterations": 3, "parallelism": 4 },
+  "outputEncoding": "base64"
+}</code></pre>
+
+<h3><code>derive method:"hkdf"</code></h3>
+<pre class="json"><code>{
+  "action": "derive",
+  "method": "hkdf",
+  "hash": "sha256",
+  "ikm": "base64:…",
+  "salt": "base64:…",
+  "info": "app:session-key",
+  "keyLength": 32
+}</code></pre>
+
+<h3><code>derive method:"ecdh"</code></h3>
+<pre class="json"><code>{
+  "action": "derive",
+  "method": "ecdh",
+  "algorithm": "x25519",
+  "privateKey": "…",
+  "peerPublicKey": "…"
+}</code></pre>
+
+<h3><code>inspect</code> — auto-detect</h3>
+<pre class="json"><code>{ "action": "inspect", "input": "-----BEGIN PGP PUBLIC KEY BLOCK-----\n…" }
+{ "action": "inspect", "input": "-----BEGIN PUBLIC KEY-----\n…" }
+{ "action": "inspect", "input": "-----BEGIN PGP MESSAGE-----\n…" }
+{ "action": "inspect", "input": "{ \"kty\": \"OKP\", \"crv\": \"Ed25519\", … }" }</code></pre>
+<p>The handler sniffs PEM headers, PGP armor markers, and JWK JSON shape, then dispatches. Returns one of <code>{kind: "raw-key" | "pgp-key" | "pgp-message", …}</code>. Private inputs surface <code>isPrivate: true</code> but never echo the secret material.</p>
+
+<h3><code>convert</code></h3>
+<pre class="json"><code>{
+  "action": "convert",
+  "from":  "pem",
+  "to":    "jwk",
+  "input": "-----BEGIN PRIVATE KEY-----\n…"
+}</code></pre>
+
+<h2 id="keys">Key handling</h2>
+
+<h3>Accepted input formats</h3>
+<ul>
+  <li><strong>PEM:</strong> PKCS#1, PKCS#8, SEC1, SPKI, X.509-certificate-as-public-key-source.</li>
+  <li><strong>DER:</strong> same containers, base64-encoded via standard <code>inputEncoding</code> semantics.</li>
+  <li><strong>JWK:</strong> JSON object — RSA / EC / OKP types.</li>
+  <li><strong>Raw symmetric keys:</strong> bytes via <code>inputEncoding</code> (<code>base64</code> / <code>hex</code> / <code>utf8</code>).</li>
+  <li><strong>OpenPGP armored:</strong> <code>-----BEGIN PGP PUBLIC KEY BLOCK-----</code> / <code>PRIVATE KEY BLOCK</code> / <code>MESSAGE</code> / <code>SIGNATURE</code> / <code>SIGNED MESSAGE</code>.</li>
+  <li><strong>OpenPGP binary:</strong> raw packet stream via <code>inputEncoding: "base64"</code>.</li>
+</ul>
+
+<h3>Output formats</h3>
+<p>Explicit, never auto-chosen. PEM is the default for raw-key crypto output; JWK is supported for everything except raw symmetric. For PGP, <code>armor: true</code> (default) yields ASCII-armored output; <code>armor: false</code> yields raw packets returned as base64.</p>
+
+<h3>Redaction</h3>
+<ul>
+  <li>Private material passed <strong>into</strong> the tool is never echoed in any response.</li>
+  <li>Private material is returned <strong>only</strong> by <code>generate</code> and <code>convert</code>.</li>
+  <li><code>inspect</code> returns metadata only — even if the input was a private key, the response describes public material plus an <code>isPrivate</code> flag.</li>
+  <li>PGP passphrases passed in are never echoed back, even on error.</li>
+  <li>The MCP description states this so callers don't pipe output through anything that logs verbatim arguments.</li>
+</ul>
+
+<h2 id="errors">Error model</h2>
+<p>Errors are <code>err()</code> values, per <code>docs/TOOLS.md</code>.</p>
+<table>
+  <thead><tr><th style="width:28%">Code</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>invalid_key</code></td><td>Parse failed, wrong type, unsupported curve.</td></tr>
+    <tr><td><code>wrong_algorithm</code></td><td>Key type does not match requested method (e.g. Ed25519 key with <code>method:"ecdsa"</code>).</td></tr>
+    <tr><td><code>decryption_failed</code></td><td>Single bucket for all decryption failures — bad tag, wrong key, wrong nonce, tampered ciphertext, wrong AAD, wrong passphrase.</td></tr>
+    <tr><td><code>unsupported_algorithm</code></td><td>Requested method / algorithm isn't on the supported list.</td></tr>
+    <tr><td><code>bad_parameters</code></td><td>KDF cost outside allowed range, key length wrong for method, nonce wrong size, RSA-OAEP plaintext exceeds modulus.</td></tr>
+    <tr><td><code>too_large</code></td><td>Input exceeds the configured cap.</td></tr>
+    <tr><td><code>parse_failed</code></td><td>Generic format-parse failure not covered above.</td></tr>
+    <tr><td><code>pgp_key_expired</code></td><td>Encryption / signing requested with an expired key.</td></tr>
+    <tr><td><code>pgp_key_unavailable</code></td><td>Verification needed a key not supplied and not found via the keyserver.</td></tr>
+    <tr><td><code>keyserver_fetch_failed</code></td><td>HTTP error / timeout / SSRF-block reaching the keyserver URL.</td></tr>
+  </tbody>
+</table>
+<p>Verification failure on <code>verify</code> is <strong>not</strong> an error — it's <code>{ valid: false }</code>. Same model as <code>jwt verify</code>.</p>
+
+<h2 id="limits">Limits &amp; resource caps</h2>
+<table>
+  <thead><tr><th style="width:42%">Operation</th><th style="width:22%">Cap</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>encrypt</code> / <code>decrypt</code> payload (symmetric, PGP)</td><td>16 MiB</td><td><code>maxInputBytes</code> per call, env override.</td></tr>
+    <tr><td><code>encrypt method:"rsa-oaep"</code> payload</td><td>modulus − OAEP overhead</td><td>RSA-OAEP is inherently small-payload; chain with symmetric for anything real.</td></tr>
+    <tr><td><code>sign</code> / <code>verify</code> message</td><td>16 MiB</td><td>same.</td></tr>
+    <tr><td><code>encrypt method:"pgp"</code> recipients</td><td>32 keys</td><td>per-call hard cap.</td></tr>
+    <tr><td><code>derive method:"pbkdf2"</code> iterations</td><td>10,000,000</td><td>hard cap.</td></tr>
+    <tr><td><code>derive method:"scrypt"</code> N / memory</td><td>2<sup>20</sup> / 256 MiB</td><td>hard caps.</td></tr>
+    <tr><td><code>derive method:"argon2id"</code> mem / time / parallelism</td><td>1 GiB / 10 / 16</td><td>hard caps.</td></tr>
+    <tr><td><code>generate method:"rsa"</code></td><td>8192 bits</td><td>hard cap (above this, keygen takes minutes).</td></tr>
+    <tr><td>Keyserver fetch (PGP verify)</td><td>5 s / 256 KiB</td><td>SSRF-guarded; same posture as <code>jwt</code> JWKS fetch.</td></tr>
+    <tr><td>Wall clock per call</td><td>30 s</td><td>matches <code>script</code>'s default.</td></tr>
+  </tbody>
+</table>
+<p>Caps exist primarily to prevent DoS via runaway KDF / keygen costs. Hitting one returns <code>bad_parameters</code> or <code>too_large</code>, not a hang.</p>
+
+<h2 id="security">Security posture</h2>
+<ul>
+  <li><strong>Randomness:</strong> OS CSPRNG only, via <code>node:crypto.randomBytes</code>. No userspace PRNG, no seeded random.</li>
+  <li><strong>Nonce policy:</strong> auto-generated by default for AEAD. Caller-supplied nonces accepted; the MCP description warns explicitly about GCM nonce reuse.</li>
+  <li><strong>Constant-time comparisons</strong> for signature verification and AEAD authentication tags — <code>crypto.timingSafeEqual</code>, never <code>===</code>.</li>
+  <li><strong>No fallback algorithm negotiation.</strong> The caller specifies the method; we don't pick one based on key type unless exactly one valid choice exists for that key.</li>
+  <li><strong>No silent downgrades.</strong> A request for <code>method:"aes-128-gcm"</code> with a 32-byte key is <code>bad_parameters</code>, not "we'll just truncate."</li>
+  <li><strong>AEAD only for symmetric encryption.</strong> No raw block-cipher or stream-cipher modes without authentication.</li>
+  <li><strong>RSA encryption is OAEP only.</strong> No PKCS1-v1_5 encrypt — padding-oracle history.</li>
+  <li><strong>PGP legacy-hash policy.</strong> SHA-1 / MD5 PGP signatures fail verification by default; <code>acceptLegacyHash: true</code> opts in per call. Signing with SHA-1 / MD5 is never permitted.</li>
+  <li><strong>PGP expiry enforcement.</strong> Encrypting to / signing with an expired key is <code>pgp_key_expired</code>. Verifying a signature made <em>before</em> the signing key's expiry is still considered valid (signature-was-valid-at-time-of-signing); response surfaces <code>keyExpiredAfterSigning: true</code>.</li>
+  <li><strong>Keyserver fetches are SSRF-guarded</strong> via the same path as <code>jwt</code>'s JWKS-URL fetch — see <code>src/lib/ssrf.ts</code>.</li>
+  <li><strong>No private-key-in-logs surface.</strong> Tool response never contains private material the caller passed in; conformance asserts this across every (action, method) combination.</li>
+</ul>
+
+<h2 id="impl">Implementation notes</h2>
+
+<h3>Dependencies</h3>
+<p>Most paths are <code>node:crypto</code> (Node 22 LTS): AES-GCM, ChaCha20-Poly1305, RSA-OAEP, PBKDF2, scrypt, HKDF, RSA / EC / Ed25519 / X25519 keygen, sign / verify, ECDH / X25519 agreement, PEM ↔ DER ↔ JWK.</p>
+<table>
+  <thead><tr><th>Package</th><th>Purpose</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>openpgp</code> (v6+)</td><td>All <code>method: "pgp"</code> paths.</td><td>Pure JS, RFC 9580 (2024) + RFC 4880 (v4) compliant, ProtonMail-maintained, tree-shakable. ~500 KB unpacked.</td></tr>
+    <tr><td><code>@node-rs/argon2</code></td><td><code>derive method:"argon2id"</code>.</td><td>Native (NAPI) with prebuilt binaries. Chosen over <code>argon2</code> (node-gyp, breaks Docker), and over <code>hash-wasm</code> (~5× slower).</td></tr>
+  </tbody>
+</table>
+<p>Alternatives rejected for PGP: shelling out to system <code>gpg</code> (drags in keyring / agent / <code>GNUPGHOME</code>, exactly the statefulness the suite forbids; needs the binary at runtime, breaks npx/Docker), and rolling our own (RFC 9580 too large to reimplement responsibly).</p>
+
+<h3>Code shape</h3>
+<p>Per <code>TOOLS.md</code>'s thin-tool / fat-lib convention:</p>
+<pre><code>src/tools/crypto.ts          # ~250 lines: schema, (action, method) dispatch, formatting
+src/lib/crypto/
+  ├── aead.ts                # aes-gcm / chacha20-poly1305
+  ├── asymmetric.ts          # rsa-oaep; ed25519 / ecdsa / rsa-pss / rsa-pkcs1
+  ├── generate.ts            # bytes + raw keypair generation
+  ├── derive.ts              # argon2id / scrypt / pbkdf2 / hkdf / ecdh
+  ├── format.ts              # PEM ↔ DER ↔ JWK
+  ├── inspect.ts             # auto-detect + dispatch
+  ├── policy.ts              # raw method allow/deny lists, parameter validation
+  └── pgp/
+      ├── encrypt.ts
+      ├── decrypt.ts
+      ├── sign.ts
+      ├── verify.ts          # + keyserver fetch via lib/ssrf.ts
+      ├── generate.ts
+      ├── inspect.ts
+      ├── armor.ts           # armored ↔ binary helpers
+      ├── detect.ts          # input sniffing for inspect dispatch
+      └── policy.ts          # PGP-specific allow/deny lists</code></pre>
+
+<h3><code>script</code> integration</h3>
+<p><code>crypto</code> is wired into the <code>script</code> VM the same way every other tool is — via the <code>build*Tool</code> factory pattern. Example: fetch a release tarball via <code>http</code>, fetch its <code>.asc</code> via <code>http</code>, then <code>verify method:"pgp"</code> in one script run. ECIES-style hybrid encryption: <code>generate method:"x25519"</code> → <code>derive method:"ecdh"</code> → <code>derive method:"hkdf"</code> → <code>encrypt method:"aes-256-gcm"</code> in a single script. The VM still cannot perform crypto itself; everything goes through this tool.</p>
+
+<h2 id="tests">Test strategy</h2>
+<p>Per <code>docs/TESTING-STRATEGY.md</code>:</p>
+<ul>
+  <li><strong>Independently derived vectors.</strong> RFC test vectors (RFC 7539 ChaCha20-Poly1305, RFC 8017 RSA-OAEP, RFC 8032 Ed25519, RFC 6070 PBKDF2, RFC 7914 scrypt, RFC 9106 argon2, RFC 5869 HKDF, RFC 9580 OpenPGP), not output pasted from the implementation under test.</li>
+  <li><strong>Round-trip properties.</strong> For every (action, method) combination: <code>decrypt(encrypt(plaintext)) === plaintext</code>; <code>verify(sign(message)) === true</code>; <code>convert(convert(key, a→b), b→a) === key</code>; <code>inspect(generate(...))</code> reports the expected type and fingerprint.</li>
+  <li><strong>Real-world fixtures.</strong> A Debian <code>Release.gpg</code>, a tagged Git commit's GPG signature, a published npm provenance manifest. Verification of these keeps us honest against the gap between RFC vectors and what GPG actually emits.</li>
+  <li><strong>Negative cases.</strong> Wrong key → <code>decryption_failed</code>. Tampered ciphertext / AAD → <code>decryption_failed</code>. Wrong key type for method → <code>wrong_algorithm</code>. Refused method → <code>unsupported_algorithm</code>. Expired PGP key on encrypt → <code>pgp_key_expired</code>. SHA-1 PGP signature without <code>acceptLegacyHash</code> → <code>{ valid: false, reason: "weak_hash" }</code>. RSA-OAEP plaintext exceeding modulus → <code>bad_parameters</code>.</li>
+  <li><strong>Redaction conformance.</strong> Registry-driven sweep across every (action, method) that accepts a private key or passphrase; asserts the secret never appears in the response.</li>
+  <li><strong>Cap enforcement.</strong> At-cap passes; over-cap fails predictably.</li>
+  <li><strong>Inspect auto-detect.</strong> Table-driven across every supported input format; assertions for correct dispatch.</li>
+  <li><strong>Composed hybrid encryption.</strong> The documented ECIES-equivalent recipe (<code>generate</code> → <code>derive ecdh</code> → <code>derive hkdf</code> → <code>encrypt aes-256-gcm</code>) round-trips.</li>
+  <li><strong>Keyserver fetch.</strong> Mocked HTTP layer; verifies SSRF guard path is taken.</li>
+  <li><strong>Description drift.</strong> A test pins the source-of-truth description in <code>crypto.ts</code> to the one in this proposal — they must stay aligned.</li>
+</ul>
+
+<h2 id="open">Open questions</h2>
+<ol>
+  <li><strong>secp256k1 sign/verify.</strong> Node supports keygen; signature operations have edge cases (low-S enforcement for Ethereum). Ship without ECDSA-on-secp256k1 in v1?</li>
+  <li><strong>Streaming.</strong> Every existing tool is one-shot. Defer until someone has a real use case — <code>script</code>'s 30 s budget and the 16 MiB cap cover most needs.</li>
+  <li><strong>Algorithm name canonicalisation.</strong> Should <code>aes256gcm</code>, <code>AES-256-GCM</code>, <code>aes-256-gcm</code> all parse? Lean strict (one canonical form). Saves owning a normalisation table.</li>
+  <li><strong>JWK thumbprint format.</strong> RFC 7638 canonical thumbprint, base64url-encoded. <code>inspect</code> should return one even for non-JWK input — universal key fingerprint.</li>
+  <li><strong>PGP keyserver protocols.</strong> Support both VKS (keys.openpgp.org) and the older HKP/HKPS family, or only VKS?</li>
+  <li><strong>PGP v6 vs v4 default.</strong> Both supported by <code>openpgp.js</code>. Default v6 for new <code>generate method:"pgp"</code> calls; confirm.</li>
+  <li><strong>Cleartext signature normalisation.</strong> Cleartext PGP signatures normalise line endings before hashing (dash-escape, trailing-whitespace strip). Document this in the description.</li>
+</ol>
+
+<h2 id="rollout">Rollout</h2>
+<p>Ship as one piece — all eight actions across every method, implemented and tested together. Two new dependencies: <code>openpgp</code> and <code>@node-rs/argon2</code>. No staged release.</p>
+
+<h2 id="refs">References</h2>
+<ul>
+  <li>RFC 4880 — OpenPGP Message Format (legacy v4)</li>
+  <li>RFC 9580 — OpenPGP (2024 revision; v6 keys, AEAD modes)</li>
+  <li>RFC 8017 — RSA-OAEP / RSA-PSS</li>
+  <li>RFC 7539 — ChaCha20 and Poly1305</li>
+  <li>RFC 5869 — HKDF</li>
+  <li>RFC 6070 — PBKDF2 test vectors</li>
+  <li>RFC 7914 — scrypt</li>
+  <li>RFC 9106 — argon2</li>
+  <li>RFC 8032 — Ed25519 / Ed448</li>
+  <li>RFC 7638 — JWK thumbprint</li>
+  <li>OWASP — Password Storage Cheat Sheet</li>
+  <li>NIST SP 800-38D — GCM (nonce uniqueness)</li>
+</ul>
+
+<footer>
+  Design proposal for SwissKnife MCP · <code>docs/proposals/crypto.html</code>
+</footer>
+
+</main>
+</body>
+</html>

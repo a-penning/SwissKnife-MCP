@@ -123,6 +123,54 @@ whether and how to call the tool. Write it for that reader.
   runtime deps need a reason — see the dependency budget in
   [ARCHITECTURE.md](ARCHITECTURE.md).
 
+## Shared helpers — reach for these before reinventing
+
+`src/lib/` mixes two kinds of file: tool-private subject libraries (used by
+one tool — `base32`, `cert`, `color`, `jsonpath`, `net`, `radix`, `random`,
+`units`, `uuid`, …) and **cross-tool helpers** (used by ≥2 tools). The
+helpers are the ones to check before writing a near-duplicate; the import
+counter above each one's `export`s tells you which is which.
+
+The current cross-tool helpers and what they're for:
+
+| Helper | Use it when… | Key exports |
+|---|---|---|
+| [`src/lib/errors.ts`](../src/lib/errors.ts) | catching unknown values to surface a message | `toMessage(e)` |
+| [`src/lib/input.ts`](../src/lib/input.ts) | a tool accepts `inputUrl` / fetches remote bytes; also for the "exactly one of inline / URL" pattern | `fetchBytes`, `fetchText`, `parseHttpUrl`, `streamToBuffer`, `assertExactlyOneOf`, `resolveTextInput` |
+| [`src/lib/batch.ts`](../src/lib/batch.ts) | a tool accepts an array for its primary input and needs the `{results, failures}` envelope with per-item isolation | `batchProcess`, `batchProcessAsync`, `BatchResult`, `BatchFailure` |
+| [`src/lib/ssrf.ts`](../src/lib/ssrf.ts) | any outbound fetch (HTTP, keyserver, JWKS, TLS dial) — never reach for plain `fetch` | `assertUrlAllowed`, `guardedFetch`, `isBlockedIp`, `ssrfGuardEnabled` |
+| [`src/lib/strict-codec.ts`](../src/lib/strict-codec.ts) | decoding base64 / base64url / hex with precise error offsets | `decodeStrictBase64`, `decodeStrictBase64Url`, `decodeStrictHex`, `decodeWithEncoding` |
+| [`src/lib/datetime.ts`](../src/lib/datetime.ts) | day-resolution math against ISO timestamps (the rest of the file is `time`-tool-private) | `daysFromNow`, `daysSince` |
+| [`src/lib/semaphore.ts`](../src/lib/semaphore.ts) | bounding concurrency on expensive per-call work (VM, worker thread) | `createSemaphore`, `maxConcurrentFromEnv` |
+| [`src/tools/types.ts`](../src/tools/types.ts) | the `ToolDef` shape itself, result builders, and **schema-boundary coercion** (the recurring harness-coercion trap) | `defineTool`, `err`, `ok`, `okJson`, `coerceBoolean`, `jsonObjectArg`, `singleOrArray`, `singleOrBatch` |
+
+Subject libraries (everything else under `src/lib/<topic>.ts`) belong to one
+tool's implementation — extracted per the thin-tool-fat-lib convention so
+tests can hit them directly. They're not the cross-tool toolkit; don't
+import them from another tool without first asking whether the code wants
+to move into a shared helper.
+
+A few specific recurring patterns and the helper that resolves them:
+
+- **"expected boolean / array / object, received string"** at the boundary →
+  `coerceBoolean()` / `jsonObjectArg()` / `singleOrArray()` from
+  `src/tools/types.ts`. See `docs/DEVELOPMENT.md` "The harness-coercion trap".
+- **"I'm writing a `forEach` over an array input and accumulating errors"** →
+  `batchProcess` / `batchProcessAsync` from `src/lib/batch.ts`. The envelope
+  shape is enforced by the conformance suite, so the helper is also the
+  spec.
+- **"I'm calling `fetch(url)` directly"** → almost certainly wrong; use
+  `guardedFetch` from `src/lib/ssrf.ts`. The same SSRF guard covers `http`,
+  every `inputUrl`, `jwt` JWKS, `inspect` TLS, and the crypto keyserver path
+  — a tool that bypasses it leaks an SSRF vector through the back door.
+- **"`Buffer.from(x, 'base64')` followed by hoping it parsed"** → use
+  `decodeStrictBase64` / `decodeWithEncoding` from `src/lib/strict-codec.ts`
+  for offset-precise rejection of garbage.
+- **"reading an `inputUrl` and capping the body"** → `streamToBuffer` (or
+  the higher-level `fetchBytes` / `fetchText`) from `src/lib/input.ts`. Don't
+  call `res.text()` before checking size — the cap is enforced *during* the
+  read, not after.
+
 ## Determinism
 
 - **Pure and deterministic by default** — same input, same output. The

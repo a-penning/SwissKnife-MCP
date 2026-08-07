@@ -49,12 +49,14 @@ export function coerceBoolean(def?: boolean) {
 }
 
 /**
- * Wrap an object-shaped param so a JSON-string form is accepted too. Some MCP
- * clients serialise nested object arguments to a JSON string at the call
- * boundary (the same reason `script`'s `args` and `http`'s `jsonBody` reparse
- * strings); without this, a `z.record(...)` field rejects them as "expected
- * object, received string". An unparseable string is passed through untouched
- * so the wrapped schema reports the real type error.
+ * Wrap an object- or array-shaped param so a JSON-string form is accepted too.
+ * Some MCP clients (and Claude's tool-call harness) serialise nested
+ * object/array arguments to a JSON string at the call boundary — same reason
+ * `script`'s `args` and `http`'s `jsonBody` reparse strings; without this, a
+ * `z.record(...)` or `z.array(...)` field rejects them as "expected object,
+ * received string". An unparseable string is passed through untouched so the
+ * wrapped schema reports the real type error. Despite the historical name, the
+ * preprocess is structurally generic — use it for arrays too.
  */
 export function jsonObjectArg<T extends z.ZodTypeAny>(schema: T) {
   return z.preprocess((v) => {

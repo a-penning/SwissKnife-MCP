@@ -53,6 +53,7 @@ describe("integration: server surface", () => {
       expect(tools.map((t) => t.name).sort()).toEqual([
         "color",
         "convert-data",
+        "crypto",
         "diff",
         "dns",
         "encode",

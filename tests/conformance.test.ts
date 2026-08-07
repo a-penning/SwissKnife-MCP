@@ -54,6 +54,7 @@ const HAPPY: Record<string, Fixture> = {
     keyLength: 16,
     params: { iterations: 1000 },
   },
+  wait: { amount: 1, unit: "milliseconds" },
 };
 
 // Tools with no offline happy path. They still get metadata + error-contract
@@ -82,6 +83,7 @@ const SAD: Record<string, Fixture> = {
   http: { url: "not-a-url" }, // invalid URL — offline validation
   // Unsupported method → err() with code unsupported_algorithm, no network.
   crypto: { action: "encrypt", method: "aes-cbc" },
+  wait: { amount: 0, unit: "seconds" }, // non-positive duration
 };
 
 function schemaOf(tool: (typeof tools)[number]) {

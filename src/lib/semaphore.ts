@@ -37,12 +37,24 @@ export function createSemaphore(max: number): Semaphore {
   };
 }
 
+/**
+ * Read a positive-integer concurrency cap from env var `name`, falling back to
+ * `def` when unset/empty/non-integer/<1. Shared by the `script`/`regex` VM cap
+ * and the `wait` cap so the parse rule can't drift between them.
+ */
+export function parseMaxFromEnv(name: string, def: number): number {
+  const raw = process.env[name];
+  if (raw === undefined || raw === "") return def;
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1 ? n : def;
+}
+
 /** Concurrency cap for the `script` and `regex` tools. Override via env; min 1. */
 const DEFAULT_MAX_CONCURRENT = 4;
 
 export function maxConcurrentFromEnv(): number {
-  const raw = process.env.SWISSKNIFE_MAX_CONCURRENT_VM;
-  if (raw === undefined || raw === "") return DEFAULT_MAX_CONCURRENT;
-  const n = Number(raw);
-  return Number.isInteger(n) && n >= 1 ? n : DEFAULT_MAX_CONCURRENT;
+  return parseMaxFromEnv(
+    "SWISSKNIFE_MAX_CONCURRENT_VM",
+    DEFAULT_MAX_CONCURRENT,
+  );
 }

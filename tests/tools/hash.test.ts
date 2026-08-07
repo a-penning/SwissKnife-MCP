@@ -161,17 +161,18 @@ describe("hash: hmac", () => {
       "sha512",
       "164b7a7bfcf819e2e395fbe73b56e0a387bd64222e831fd610270cd7ea2505549758bf75c05a994a6d034f65f8f0e6fdcaeab1a34d4a6b4b636e070a38bce737",
     ],
-  ] as Array<
-    [Args["algorithm"], string]
-  >)("HMAC-%s matches RFC 4231 test case 2", async (algorithm, expected) => {
-    expect(
-      await digest({
-        algorithm,
-        input: "what do ya want for nothing?",
-        hmacKey: "Jefe",
-      }),
-    ).toBe(expected);
-  });
+  ] as Array<[Args["algorithm"], string]>)(
+    "HMAC-%s matches RFC 4231 test case 2",
+    async (algorithm, expected) => {
+      expect(
+        await digest({
+          algorithm,
+          input: "what do ya want for nothing?",
+          hmacKey: "Jefe",
+        }),
+      ).toBe(expected);
+    },
+  );
   it("supports hex keys (RFC 4231 test case 1)", async () => {
     expect(
       await digest({
@@ -199,18 +200,19 @@ describe("hash: encodings and input contract", () => {
   });
   // Output encodings: each derives the SHA-256("abc") digest bytes re-encoded
   // via Buffer, computed here rather than read from the tool.
-  it.each(["hex", "base64", "base64url"] as Array<
-    Args["outputEncoding"]
-  >)("outputs digest as %s", async (outputEncoding) => {
-    const raw = Buffer.from(
-      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-      "hex",
-    );
-    const expected = raw.toString(outputEncoding);
-    expect(
-      await digest({ algorithm: "sha256", input: "abc", outputEncoding }),
-    ).toBe(expected);
-  });
+  it.each(["hex", "base64", "base64url"] as Array<Args["outputEncoding"]>)(
+    "outputs digest as %s",
+    async (outputEncoding) => {
+      const raw = Buffer.from(
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        "hex",
+      );
+      const expected = raw.toString(outputEncoding);
+      expect(
+        await digest({ algorithm: "sha256", input: "abc", outputEncoding }),
+      ).toBe(expected);
+    },
+  );
   it("rejects both input and inputUrl", async () => {
     const res = await run({
       algorithm: "sha256",
@@ -353,23 +355,24 @@ describe("hash: batch input", () => {
     [["not!", "Zm9v", "aGVsbG8="], 0],
     [["aGVsbG8=", "not!", "Zm9v"], 1],
     [["aGVsbG8=", "Zm9v", "not!"], 2],
-  ] as Array<
-    [string[], number]
-  >)("batch failures carry the right index for %j", async (input, badIndex) => {
-    const res = await run({
-      algorithm: "sha256",
-      input,
-      inputEncoding: "base64",
-    });
-    expect(res.isError, JSON.stringify(res.content)).toBeFalsy();
-    const s = res.structuredContent as {
-      results: unknown[];
-      failures: Array<{ index: number }>;
-    };
-    expect(s.results).toHaveLength(2);
-    expect(s.failures).toHaveLength(1);
-    expect(s.failures[0]?.index).toBe(badIndex);
-  });
+  ] as Array<[string[], number]>)(
+    "batch failures carry the right index for %j",
+    async (input, badIndex) => {
+      const res = await run({
+        algorithm: "sha256",
+        input,
+        inputEncoding: "base64",
+      });
+      expect(res.isError, JSON.stringify(res.content)).toBeFalsy();
+      const s = res.structuredContent as {
+        results: unknown[];
+        failures: Array<{ index: number }>;
+      };
+      expect(s.results).toHaveLength(2);
+      expect(s.failures).toHaveLength(1);
+      expect(s.failures[0]?.index).toBe(badIndex);
+    },
+  );
 });
 
 describe("hash: enum / shape niceties", () => {

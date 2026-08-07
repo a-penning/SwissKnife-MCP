@@ -222,21 +222,19 @@ describe("convert-data: errors", () => {
   });
 
   // csvDelimiter must be exactly one character.
-  it.each([
-    [",,"],
-    [""],
-    ["||"],
-    ["ab"],
-  ])("rejects csvDelimiter %j", async (delim) => {
-    const res = await run({
-      from: "json",
-      to: "csv",
-      input: '[{"a":1}]',
-      csvDelimiter: delim,
-    });
-    expect(res.isError).toBe(true);
-    expect(JSON.stringify(res.content)).toMatch(/single character/);
-  });
+  it.each([[",,"], [""], ["||"], ["ab"]])(
+    "rejects csvDelimiter %j",
+    async (delim) => {
+      const res = await run({
+        from: "json",
+        to: "csv",
+        input: '[{"a":1}]',
+        csvDelimiter: delim,
+      });
+      expect(res.isError).toBe(true);
+      expect(JSON.stringify(res.content)).toMatch(/single character/);
+    },
+  );
 
   it("requires exactly one of input/inputUrl", async () => {
     expect((await run({ from: "json", to: "yaml" })).isError).toBe(true);
@@ -349,10 +347,13 @@ describe("convert-data: more round-trips and edges (range)", () => {
       ],
     ],
     ["csv", "name\napi\nweb", [{ name: "api" }, { name: "web" }]],
-  ])("parses %s into the expected JSON structure", async (from, input, expected) => {
-    const out = await result({ from: from as never, to: "json", input });
-    expect(JSON.parse(out.result)).toEqual(expected);
-  });
+  ])(
+    "parses %s into the expected JSON structure",
+    async (from, input, expected) => {
+      const out = await result({ from: from as never, to: "json", input });
+      expect(JSON.parse(out.result)).toEqual(expected);
+    },
+  );
 
   // Round-trips that exercise serialize side across targets. Each is verified
   // by an independent property of the output, not by string equality with
@@ -362,10 +363,13 @@ describe("convert-data: more round-trips and edges (range)", () => {
     ["json", "toml", '{"k":"v"}', 'k = "v"'],
     ["json", "minified", '{ "a" : [ 1 , 2 ] }', '{"a":[1,2]}'],
     ["json", "pretty", '{"a":1}', '"a": 1'],
-  ])("%s -> %s contains expected fragment", async (from, to, input, fragment) => {
-    const out = await result({ from: from as never, to: to as never, input });
-    expect(out.result).toContain(fragment);
-  });
+  ])(
+    "%s -> %s contains expected fragment",
+    async (from, to, input, fragment) => {
+      const out = await result({ from: from as never, to: to as never, input });
+      expect(out.result).toContain(fragment);
+    },
+  );
 
   it("preserves object key order through json→pretty (no sorting)", async () => {
     const out = await result({

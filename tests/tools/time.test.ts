@@ -27,12 +27,15 @@ describe("time: convert", () => {
     ["946684800", "2000-01-01T00:00:00.000Z", 946684800000, "Sat"],
     ["1000000000", "2001-09-09T01:46:40.000Z", 1000000000000, "Sun"],
     ["0", "1970-01-01T00:00:00.000Z", 0, "Thu"],
-  ])("auto-detects unix seconds %j -> %j", (input, isoUtc, unixMillis, dayOfWeek) => {
-    const out = structured({ action: "convert", input });
-    expect(out.isoUtc).toBe(isoUtc);
-    expect(out.unixMillis).toBe(unixMillis);
-    expect(out.dayOfWeek).toBe(dayOfWeek);
-  });
+  ])(
+    "auto-detects unix seconds %j -> %j",
+    (input, isoUtc, unixMillis, dayOfWeek) => {
+      const out = structured({ action: "convert", input });
+      expect(out.isoUtc).toBe(isoUtc);
+      expect(out.unixMillis).toBe(unixMillis);
+      expect(out.dayOfWeek).toBe(dayOfWeek);
+    },
+  );
   // 12+ digit integers are unix-milliseconds.
   it.each([
     ["1700000000000", "2023-11-14T22:13:20.000Z"],
@@ -49,13 +52,16 @@ describe("time: convert", () => {
     ["2000-01-01T00:00:00Z", 946684800, "Sat", 1, 52],
     ["2024-12-31T23:59:59Z", 1735689599, "Tue", 366, 1],
     ["2021-01-01T00:00:00Z", 1609459200, "Fri", 1, 53],
-  ])("parses ISO %j and reports week/day numbers", (input, unixSeconds, dayOfWeek, doy, week) => {
-    const out = structured({ action: "convert", input });
-    expect(out.unixSeconds).toBe(unixSeconds);
-    expect(out.dayOfWeek).toBe(dayOfWeek);
-    expect(out.dayOfYear).toBe(doy);
-    expect(out.isoWeek).toBe(week);
-  });
+  ])(
+    "parses ISO %j and reports week/day numbers",
+    (input, unixSeconds, dayOfWeek, doy, week) => {
+      const out = structured({ action: "convert", input });
+      expect(out.unixSeconds).toBe(unixSeconds);
+      expect(out.dayOfWeek).toBe(dayOfWeek);
+      expect(out.dayOfYear).toBe(doy);
+      expect(out.isoWeek).toBe(week);
+    },
+  );
   // Same UTC instant, formatted into a range of zones (offsets reasoned from
   // each zone's standard/DST rules for the given date).
   it.each([
@@ -121,15 +127,13 @@ describe("time: convert", () => {
     const res = run({ action: "convert", input });
     expect(res.isError).toBe(true);
   });
-  it.each([
-    "Mars/Olympus_Mons",
-    "Not/AZone",
-    "GMT+25",
-    "Europe/Nowhere",
-  ])("rejects unknown timezone %j", (timezone) => {
-    const res = run({ action: "convert", input: "1700000000", timezone });
-    expect(res.isError).toBe(true);
-  });
+  it.each(["Mars/Olympus_Mons", "Not/AZone", "GMT+25", "Europe/Nowhere"])(
+    "rejects unknown timezone %j",
+    (timezone) => {
+      const res = run({ action: "convert", input: "1700000000", timezone });
+      expect(res.isError).toBe(true);
+    },
+  );
 });
 
 describe("time: diff and add", () => {
@@ -165,12 +169,15 @@ describe("time: diff and add", () => {
       "a → b (b is after a)",
     ],
     ["2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z", 0, "0ms", "same"],
-  ])("computes signed difference %j -> %j", (a, b, milliseconds, human, direction) => {
-    const out = structured({ action: "diff", a, b });
-    expect(out.milliseconds).toBe(milliseconds);
-    expect(out.human).toBe(human);
-    expect(out.direction).toBe(direction);
-  });
+  ])(
+    "computes signed difference %j -> %j",
+    (a, b, milliseconds, human, direction) => {
+      const out = structured({ action: "diff", a, b });
+      expect(out.milliseconds).toBe(milliseconds);
+      expect(out.human).toBe(human);
+      expect(out.direction).toBe(direction);
+    },
+  );
   it.each([
     [{ a: "2024-01-01T00:00:00Z" }], // missing b
     [{ b: "2024-01-01T00:00:00Z" }], // missing a

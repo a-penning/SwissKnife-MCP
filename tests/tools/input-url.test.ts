@@ -96,18 +96,19 @@ describe("remote inputs: success path", () => {
         "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
     ],
   ];
-  it.each(
-    abcDigests,
-  )("hash(%s) of the fetched 'abc' document matches the known digest", async (algorithm, expected) => {
-    const res = (await hashTool.handler({
-      algorithm,
-      inputUrl: `${baseUrl}/abc.txt`,
-      inputEncoding: "utf8",
-      hmacKeyEncoding: "utf8",
-      outputEncoding: "hex",
-    } as Parameters<typeof hashTool.handler>[0])) as CallToolResult;
-    expect(structured(res).digest).toBe(expected);
-  });
+  it.each(abcDigests)(
+    "hash(%s) of the fetched 'abc' document matches the known digest",
+    async (algorithm, expected) => {
+      const res = (await hashTool.handler({
+        algorithm,
+        inputUrl: `${baseUrl}/abc.txt`,
+        inputEncoding: "utf8",
+        hmacKeyEncoding: "utf8",
+        outputEncoding: "hex",
+      } as Parameters<typeof hashTool.handler>[0])) as CallToolResult;
+      expect(structured(res).digest).toBe(expected);
+    },
+  );
 
   it("convert-data converts a fetched CSV to JSON", async () => {
     const res = (await convertDataTool.handler({

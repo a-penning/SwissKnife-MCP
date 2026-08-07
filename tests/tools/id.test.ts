@@ -123,16 +123,19 @@ describe("id: generate other kinds", () => {
     ["random-string", 1, "xyz"],
     ["random-string", 50, "xyz"],
     ["random-string", 200, "0123456789abcdef"],
-  ])("%s(length=%i, alphabet=%s) draws only from the alphabet", (kind, length, alphabet) => {
-    const v = values({
-      action: "generate",
-      kind,
-      length,
-      alphabet,
-    })[0] as string;
-    expect([...v]).toHaveLength(length);
-    expect([...v].every((c) => alphabet.includes(c))).toBe(true);
-  });
+  ])(
+    "%s(length=%i, alphabet=%s) draws only from the alphabet",
+    (kind, length, alphabet) => {
+      const v = values({
+        action: "generate",
+        kind,
+        length,
+        alphabet,
+      })[0] as string;
+      expect([...v]).toHaveLength(length);
+      expect([...v].every((c) => alphabet.includes(c))).toBe(true);
+    },
+  );
   // random-bytes: hex is 2 chars/byte, base64 is ceil(n/3)*4 (with padding).
   it.each<[number, "hex", number]>([
     [1, "hex", 2],
@@ -166,22 +169,23 @@ describe("id: generate other kinds", () => {
   });
   // password: across a range of lengths, every enabled class is present and
   // the length is exact. Repeat each so the resample loop is exercised.
-  it.each([
-    4, 8, 12, 20, 64,
-  ])("password(length=%i) contains every enabled class", (length) => {
-    for (let i = 0; i < 20; i++) {
-      const v = values({
-        action: "generate",
-        kind: "password",
-        length,
-      })[0] as string;
-      expect(v).toHaveLength(length);
-      expect(v).toMatch(/[a-z]/);
-      expect(v).toMatch(/[A-Z]/);
-      expect(v).toMatch(/[0-9]/);
-      expect(v).toMatch(/[!@#$%^&*()\-_=+[\]{};:,.<>?]/);
-    }
-  });
+  it.each([4, 8, 12, 20, 64])(
+    "password(length=%i) contains every enabled class",
+    (length) => {
+      for (let i = 0; i < 20; i++) {
+        const v = values({
+          action: "generate",
+          kind: "password",
+          length,
+        })[0] as string;
+        expect(v).toHaveLength(length);
+        expect(v).toMatch(/[a-z]/);
+        expect(v).toMatch(/[A-Z]/);
+        expect(v).toMatch(/[0-9]/);
+        expect(v).toMatch(/[!@#$%^&*()\-_=+[\]{};:,.<>?]/);
+      }
+    },
+  );
   it.each([1, 2, 5, 100])("count=%i returns that many values", (count) => {
     expect(values({ action: "generate", kind: "ulid", count })).toHaveLength(
       count,
@@ -264,13 +268,14 @@ describe("id: errors", () => {
     ).toBe(true);
   });
   // password length must be >= the number of enabled classes (4 by default).
-  it.each([
-    1, 2, 3,
-  ])("rejects password shorter than its classes (len=%i)", (length) => {
-    expect(run({ action: "generate", kind: "password", length }).isError).toBe(
-      true,
-    );
-  });
+  it.each([1, 2, 3])(
+    "rejects password shorter than its classes (len=%i)",
+    (length) => {
+      expect(
+        run({ action: "generate", kind: "password", length }).isError,
+      ).toBe(true);
+    },
+  );
   it("password of exactly the class count succeeds (boundary, len=4)", () => {
     expect(
       run({ action: "generate", kind: "password", length: 4 }).isError,
@@ -456,16 +461,13 @@ describe("id: supported-kind contract", () => {
 
   // Kinds the docs imply but that don't exist — the schema must reject them,
   // not silently accept. (If you implement one, move it into SUPPORTED above.)
-  it.each([
-    "uuid-v1",
-    "uuid-v6",
-    "uuid-v3",
-    "short",
-    "cuid",
-  ])("schema rejects unimplemented kind=%s", (kind) => {
-    const parsed = idSchema.safeParse({ action: "generate", kind });
-    expect(parsed.success, `${kind} should be rejected by the schema`).toBe(
-      false,
-    );
-  });
+  it.each(["uuid-v1", "uuid-v6", "uuid-v3", "short", "cuid"])(
+    "schema rejects unimplemented kind=%s",
+    (kind) => {
+      const parsed = idSchema.safeParse({ action: "generate", kind });
+      expect(parsed.success, `${kind} should be rejected by the schema`).toBe(
+        false,
+      );
+    },
+  );
 });

@@ -53,13 +53,14 @@ describe("text: case", () => {
     ["upper", "PARSEHTTPRESPONSE"],
     ["lower", "parsehttpresponse"],
   ];
-  it.each(
-    ACRONYM,
-  )("splits camel humps/acronyms for %s", async (target, expected) => {
-    expect(
-      await result({ action: "case", input: "parseHTTPResponse", target }),
-    ).toBe(expected);
-  });
+  it.each(ACRONYM)(
+    "splits camel humps/acronyms for %s",
+    async (target, expected) => {
+      expect(
+        await result({ action: "case", input: "parseHTTPResponse", target }),
+      ).toBe(expected);
+    },
+  );
 
   // case requires a target — distinct failure mode.
   it("rejects missing target", async () => {
@@ -90,13 +91,14 @@ describe("text: slugify", () => {
     ["héllo wörld", "$$", "hello$$world"],
     ["héllo wörld", "$&", "hello$&world"],
   ];
-  it.each(
-    SEP_CASES,
-  )("slugifies %j with separator %j to %j", async (input, separator, expected) => {
-    expect(await result({ action: "slugify", input, separator })).toBe(
-      expected,
-    );
-  });
+  it.each(SEP_CASES)(
+    "slugifies %j with separator %j to %j",
+    async (input, separator, expected) => {
+      expect(await result({ action: "slugify", input, separator })).toBe(
+        expected,
+      );
+    },
+  );
 });
 
 describe("text: lines", () => {
@@ -124,13 +126,14 @@ describe("text: lines", () => {
     ["c\nb\na\n", {}, "a\nb\nc\n"],
     ["c\nb\na", {}, "a\nb\nc"],
   ];
-  it.each(
-    SORT,
-  )("sort-lines %j with %j gives %j", async (input, opts, expected) => {
-    expect(await result({ action: "sort-lines", input, ...opts })).toBe(
-      expected,
-    );
-  });
+  it.each(SORT)(
+    "sort-lines %j with %j gives %j",
+    async (input, opts, expected) => {
+      expect(await result({ action: "sort-lines", input, ...opts })).toBe(
+        expected,
+      );
+    },
+  );
 
   // dedupe-lines preserving first-seen order. Each case asserts both the
   // result and the count of removed duplicates.
@@ -140,15 +143,18 @@ describe("text: lines", () => {
     ["1\n2\n3", "1\n2\n3", 0],
     ["dup\ndup\nuniq\ndup", "dup\nuniq", 2],
   ];
-  it.each(
-    DEDUPE,
-  )("dedupe-lines %j gives %j (removed %i)", async (input, expected, removed) => {
-    const res = await run({ action: "dedupe-lines", input });
-    expect((res.structuredContent as { result: string }).result).toBe(expected);
-    expect((res.structuredContent as { removed: number }).removed).toBe(
-      removed,
-    );
-  });
+  it.each(DEDUPE)(
+    "dedupe-lines %j gives %j (removed %i)",
+    async (input, expected, removed) => {
+      const res = await run({ action: "dedupe-lines", input });
+      expect((res.structuredContent as { result: string }).result).toBe(
+        expected,
+      );
+      expect((res.structuredContent as { removed: number }).removed).toBe(
+        removed,
+      );
+    },
+  );
 });
 
 describe("text: count", () => {
@@ -261,18 +267,19 @@ describe("text: escape / unescape", () => {
     "back\\slash",
     "emoji 🚀 ok",
   ];
-  it.each(
-    JSON_ROUNDTRIP,
-  )("json escape/unescape round-trips %j", async (orig) => {
-    const escaped = await result({
-      action: "escape",
-      input: orig,
-      style: "json",
-    });
-    expect(
-      await result({ action: "unescape", input: escaped, style: "json" }),
-    ).toBe(orig);
-  });
+  it.each(JSON_ROUNDTRIP)(
+    "json escape/unescape round-trips %j",
+    async (orig) => {
+      const escaped = await result({
+        action: "escape",
+        input: orig,
+        style: "json",
+      });
+      expect(
+        await result({ action: "unescape", input: escaped, style: "json" }),
+      ).toBe(orig);
+    },
+  );
 
   // POSIX shell single-quoting.
   const SHELL: Array<[string, string]> = [
@@ -431,15 +438,18 @@ describe("text: edge cases", () => {
     ["one two one", "one", "1", "1 two 1", 2],
     ["a.*b", ".*", "X", "aXb", 1],
   ];
-  it.each(
-    REPLACE,
-  )("replace %j find=%j replacement=%j -> %j (%i)", async (input, find, replacement, expected, count) => {
-    const out = await run({ action: "replace", input, find, replacement });
-    expect((out.structuredContent as { result: string }).result).toBe(expected);
-    expect(
-      (out.structuredContent as { replacements: number }).replacements,
-    ).toBe(count);
-  });
+  it.each(REPLACE)(
+    "replace %j find=%j replacement=%j -> %j (%i)",
+    async (input, find, replacement, expected, count) => {
+      const out = await run({ action: "replace", input, find, replacement });
+      expect((out.structuredContent as { result: string }).result).toBe(
+        expected,
+      );
+      expect(
+        (out.structuredContent as { replacements: number }).replacements,
+      ).toBe(count);
+    },
+  );
 
   // Distinct failure modes for replace: missing find, missing replacement,
   // and empty find.

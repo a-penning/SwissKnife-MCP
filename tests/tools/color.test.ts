@@ -134,12 +134,12 @@ describe("color: single-value conversions", () => {
   // `([\d.]+%?)` has no sign, so the rgba()/hsla() regex fails to match a
   // `-1` alpha and the input falls through to an error. (Contrast with hsl
   // s/l clamping, which happens post-match via clamp01.)
-  it.each([
-    ["rgba(255, 0, 0, -1)"],
-    ["hsla(0, 100%, 50%, -0.5)"],
-  ])("rejects negative alpha %s", (input) => {
-    expect(run({ input: input }).isError).toBe(true);
-  });
+  it.each([["rgba(255, 0, 0, -1)"], ["hsla(0, 100%, 50%, -0.5)"]])(
+    "rejects negative alpha %s",
+    (input) => {
+      expect(run({ input: input }).isError).toBe(true);
+    },
+  );
 
   // Hue is normalised mod 360 (CSS Color 4), so equivalent angles match.
   it.each([
@@ -244,19 +244,18 @@ describe("color: single-value conversions", () => {
       okCount: 1,
       failIndices: [],
     },
-  ])("batch ($name): preserves original failure indices", ({
-    value,
-    okCount,
-    failIndices,
-  }) => {
-    const out = structured(run({ input: value }));
-    const results = out.results as unknown[];
-    const failures = out.failures as Array<{ index: number }>;
-    expect(results).toHaveLength(okCount);
-    // `failures` is always an array (CC-2), empty when nothing failed.
-    expect(Array.isArray(failures)).toBe(true);
-    expect(failures.map((f) => f.index)).toEqual(failIndices);
-  });
+  ])(
+    "batch ($name): preserves original failure indices",
+    ({ value, okCount, failIndices }) => {
+      const out = structured(run({ input: value }));
+      const results = out.results as unknown[];
+      const failures = out.failures as Array<{ index: number }>;
+      expect(results).toHaveLength(okCount);
+      // `failures` is always an array (CC-2), empty when nothing failed.
+      expect(Array.isArray(failures)).toBe(true);
+      expect(failures.map((f) => f.index)).toEqual(failIndices);
+    },
+  );
 
   it("always emits failures as an array (empty when nothing failed) — CC-2", () => {
     const out = structured(run({ input: ["#ff0000", "#00ff00"] }));
@@ -272,25 +271,25 @@ describe("color: single-value conversions", () => {
   // Mixed legacy/modern delimiters in rgb()/hsl() where a COMMA precedes a
   // space-separated tail — the heuristic detects this form and emits the
   // helpful "commas OR whitespace" pointer.
-  it.each([
-    ["hsl(32, 100% 50%)"],
-    ["rgb(255, 136 0)"],
-  ])("rejects mixed comma-then-space delimiters in %s with a pointer", (value) => {
-    const res = run({ input: value });
-    expect(res.isError).toBe(true);
-    expect(JSON.stringify(res.content)).toMatch(/commas OR whitespace/);
-  });
+  it.each([["hsl(32, 100% 50%)"], ["rgb(255, 136 0)"]])(
+    "rejects mixed comma-then-space delimiters in %s with a pointer",
+    (value) => {
+      const res = run({ input: value });
+      expect(res.isError).toBe(true);
+      expect(JSON.stringify(res.content)).toMatch(/commas OR whitespace/);
+    },
+  );
 
   // The space-then-comma form (and other mixed shapes) still ERRORS — it just
   // falls through to the generic parse error rather than the tailored
   // mixed-delimiter pointer, because the detector heuristic only catches the
   // comma-first shape. Rejection is what matters here.
-  it.each([
-    ["hsl(32 100%, 50%)"],
-    ["rgb(255 136, 0)"],
-  ])("rejects mixed space-then-comma delimiters in %s", (value) => {
-    expect(run({ input: value }).isError).toBe(true);
-  });
+  it.each([["hsl(32 100%, 50%)"], ["rgb(255 136, 0)"]])(
+    "rejects mixed space-then-comma delimiters in %s",
+    (value) => {
+      expect(run({ input: value }).isError).toBe(true);
+    },
+  );
 
   // WCAG pass/fail flags across the contrast bands. Thresholds (WCAG 2.1):
   // aaLarge ≥3, aaNormal ≥4.5, aaaLarge ≥4.5, aaaNormal ≥7. White-on-black is
@@ -321,11 +320,14 @@ describe("color: single-value conversions", () => {
     ["#ffffff", "#000000", 21, true], // symmetric
     ["#777777", "#777777", 1, false], // identical → 1:1
     ["#000000", "#000000", 1, false],
-  ])("`against` contrast(%s, %s) ≈ %f (aaNormal=%s)", (value, against, contrast, aaNormal) => {
-    const out = structured(run({ input: value, against }));
-    expect(out.contrast).toBeCloseTo(contrast, 1);
-    expect((out.wcag as Record<string, boolean>).aaNormal).toBe(aaNormal);
-  });
+  ])(
+    "`against` contrast(%s, %s) ≈ %f (aaNormal=%s)",
+    (value, against, contrast, aaNormal) => {
+      const out = structured(run({ input: value, against }));
+      expect(out.contrast).toBeCloseTo(contrast, 1);
+      expect((out.wcag as Record<string, boolean>).aaNormal).toBe(aaNormal);
+    },
+  );
 
   it("`against` produces a contrast > 1 for distinct colors", () => {
     const out = structured(run({ input: "#777777", against: "#ffffff" }));

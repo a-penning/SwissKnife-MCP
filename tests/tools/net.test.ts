@@ -174,14 +174,12 @@ describe("net: classify", () => {
   // classify shares the same parse guard, so the same inet_aton-style
   // ambiguous forms must be rejected here too (see the parse block for
   // rationale).
-  it.each([
-    "1.2.3",
-    "192.168.1",
-    "1.2",
-    "0x7f.0.0.1",
-  ])("rejects ambiguous inet_aton-style IPv4 %s", (ip) => {
-    expect(run({ action: "classify", value: ip }).isError).toBe(true);
-  });
+  it.each(["1.2.3", "192.168.1", "1.2", "0x7f.0.0.1"])(
+    "rejects ambiguous inet_aton-style IPv4 %s",
+    (ip) => {
+      expect(run({ action: "classify", value: ip }).isError).toBe(true);
+    },
+  );
 });
 
 describe("net: cidr", () => {
@@ -249,32 +247,35 @@ describe("net: cidr", () => {
       hostCount: String(2 ** 32),
       usableHosts: String(2 ** 32 - 2),
     },
-  ])("describes IPv4 $cidr with broadcast + usable range", ({
-    cidr,
-    network,
-    broadcast,
-    firstUsable,
-    lastUsable,
-    mask,
-    hostCount,
-    usableHosts,
-  }) => {
-    const s = structured(run({ action: "cidr", value: cidr }));
-    expect(s.family).toBe(4);
-    expect(s.network).toBe(network);
-    expect(s.broadcast).toBe(broadcast);
-    // firstAddress / lastAddress are the inclusive range bounds.
-    expect(s.firstAddress).toBe(network);
-    expect(s.lastAddress).toBe(broadcast);
-    // firstUsableHost / lastUsableHost exclude network + broadcast for
-    // IPv4 /<=30 — what ipcalc and DHCP planners use.
-    expect(s.firstUsableHost).toBe(firstUsable);
-    expect(s.lastUsableHost).toBe(lastUsable);
-    expect(s.usableHosts).toBe(usableHosts);
-    expect(s.mask).toBe(mask);
-    expect(s.hostCount).toBe(hostCount);
-    expect(s.isHostBitsSet).toBe(false);
-  });
+  ])(
+    "describes IPv4 $cidr with broadcast + usable range",
+    ({
+      cidr,
+      network,
+      broadcast,
+      firstUsable,
+      lastUsable,
+      mask,
+      hostCount,
+      usableHosts,
+    }) => {
+      const s = structured(run({ action: "cidr", value: cidr }));
+      expect(s.family).toBe(4);
+      expect(s.network).toBe(network);
+      expect(s.broadcast).toBe(broadcast);
+      // firstAddress / lastAddress are the inclusive range bounds.
+      expect(s.firstAddress).toBe(network);
+      expect(s.lastAddress).toBe(broadcast);
+      // firstUsableHost / lastUsableHost exclude network + broadcast for
+      // IPv4 /<=30 — what ipcalc and DHCP planners use.
+      expect(s.firstUsableHost).toBe(firstUsable);
+      expect(s.lastUsableHost).toBe(lastUsable);
+      expect(s.usableHosts).toBe(usableHosts);
+      expect(s.mask).toBe(mask);
+      expect(s.hostCount).toBe(hostCount);
+      expect(s.isHostBitsSet).toBe(false);
+    },
+  );
 
   // Host-bits-set inputs normalise to the network address and flag the input,
   // never silently fixing up.
@@ -294,13 +295,16 @@ describe("net: cidr", () => {
     ["10.0.0.0/31", "2"],
     ["10.0.0.1/32", "1"],
     ["192.168.0.0/31", "2"],
-  ])("omits broadcast for small prefix %s (hostCount %s)", (cidr, hostCount) => {
-    const s = structured(run({ action: "cidr", value: cidr }));
-    expect(s.broadcast).toBeUndefined();
-    expect(s.hostCount).toBe(hostCount);
-    // /31, /32: usableHosts == hostCount (no exclusions).
-    expect(s.usableHosts).toBe(hostCount);
-  });
+  ])(
+    "omits broadcast for small prefix %s (hostCount %s)",
+    (cidr, hostCount) => {
+      const s = structured(run({ action: "cidr", value: cidr }));
+      expect(s.broadcast).toBeUndefined();
+      expect(s.hostCount).toBe(hostCount);
+      // /31, /32: usableHosts == hostCount (no exclusions).
+      expect(s.usableHosts).toBe(hostCount);
+    },
+  );
 
   // IPv6 prefixes: no broadcast, hostCount = 2^hostBits as a decimal string
   // (BigInt because the value overflows Number).
@@ -405,27 +409,23 @@ describe("net: convert", () => {
   });
 
   // Pure IPv6 has no cross-family form.
-  it.each([
-    ["2001:db8::1"],
-    ["fe80::1"],
-    ["::1"],
-    ["fc00::1"],
-  ])("returns no cross-family form for pure IPv6 %s", (ip) => {
-    const s = structured(run({ action: "convert", value: ip }));
-    expect(s.embeddedIpv4).toBeUndefined();
-    expect(s.ipv4Mapped).toBeUndefined();
-    expect(s.conversionAvailable).toBe(false);
-  });
+  it.each([["2001:db8::1"], ["fe80::1"], ["::1"], ["fc00::1"]])(
+    "returns no cross-family form for pure IPv6 %s",
+    (ip) => {
+      const s = structured(run({ action: "convert", value: ip }));
+      expect(s.embeddedIpv4).toBeUndefined();
+      expect(s.ipv4Mapped).toBeUndefined();
+      expect(s.conversionAvailable).toBe(false);
+    },
+  );
 
   // Negative range for convert.
-  it.each([
-    ["bogus"],
-    ["010.0.0.1"],
-    ["256.0.0.1"],
-    [""],
-  ])("rejects malformed convert input %s", (ip) => {
-    expect(run({ action: "convert", value: ip }).isError).toBe(true);
-  });
+  it.each([["bogus"], ["010.0.0.1"], ["256.0.0.1"], [""]])(
+    "rejects malformed convert input %s",
+    (ip) => {
+      expect(run({ action: "convert", value: ip }).isError).toBe(true);
+    },
+  );
 });
 
 describe("net: validation", () => {

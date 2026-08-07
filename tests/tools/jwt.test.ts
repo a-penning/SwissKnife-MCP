@@ -62,54 +62,52 @@ describe("jwt: decode", () => {
 describe("jwt: verify (HMAC)", () => {
   // HS256/384/512 round-trip: sign with each then verify with the right
   // secret succeeds and surfaces the algorithm in the verified header.
-  it.each([
-    "HS256",
-    "HS384",
-    "HS512",
-  ])("%s round-trips: sign then verify with the right secret", async (algorithm) => {
-    const signed = structured(
-      await run({
-        action: "sign",
-        algorithm,
-        key: "round-trip-secret",
-        payload: { sub: "rt" },
-      }),
-    );
-    const out = structured(
-      await run({
-        action: "verify",
-        input: signed.token as string,
-        key: "round-trip-secret",
-      }),
-    );
-    expect(out.valid).toBe(true);
-    expect((out.header as Record<string, unknown>).alg).toBe(algorithm);
-    expect((out.payload as Record<string, unknown>).sub).toBe("rt");
-  });
+  it.each(["HS256", "HS384", "HS512"])(
+    "%s round-trips: sign then verify with the right secret",
+    async (algorithm) => {
+      const signed = structured(
+        await run({
+          action: "sign",
+          algorithm,
+          key: "round-trip-secret",
+          payload: { sub: "rt" },
+        }),
+      );
+      const out = structured(
+        await run({
+          action: "verify",
+          input: signed.token as string,
+          key: "round-trip-secret",
+        }),
+      );
+      expect(out.valid).toBe(true);
+      expect((out.header as Record<string, unknown>).alg).toBe(algorithm);
+      expect((out.payload as Record<string, unknown>).sub).toBe("rt");
+    },
+  );
   // Wrong secret → invalid with a signature failure reason, across algs.
-  it.each([
-    "HS256",
-    "HS384",
-    "HS512",
-  ])("%s with the WRONG secret is invalid", async (algorithm) => {
-    const signed = structured(
-      await run({
-        action: "sign",
-        algorithm,
-        key: "correct-secret",
-        payload: { sub: "rt" },
-      }),
-    );
-    const out = structured(
-      await run({
-        action: "verify",
-        input: signed.token as string,
-        key: "wrong-secret",
-      }),
-    );
-    expect(out.valid).toBe(false);
-    expect(typeof out.failureReason).toBe("string");
-  });
+  it.each(["HS256", "HS384", "HS512"])(
+    "%s with the WRONG secret is invalid",
+    async (algorithm) => {
+      const signed = structured(
+        await run({
+          action: "sign",
+          algorithm,
+          key: "correct-secret",
+          payload: { sub: "rt" },
+        }),
+      );
+      const out = structured(
+        await run({
+          action: "verify",
+          input: signed.token as string,
+          key: "wrong-secret",
+        }),
+      );
+      expect(out.valid).toBe(false);
+      expect(typeof out.failureReason).toBe("string");
+    },
+  );
   it("verifies the known token with the right secret", async () => {
     const out = structured(
       await run({ action: "verify", input: KNOWN_TOKEN, key: KNOWN_SECRET }),
@@ -146,40 +144,46 @@ describe("jwt: verify (HMAC)", () => {
     ["service-a", "service-b", false],
     ["service-a", ["service-a", "service-c"], true],
     ["service-a", ["service-b", "service-c"], false],
-  ])("aud=%s vs expected=%j → valid:%s", async (aud, expected, shouldBeValid) => {
-    const signed = structured(
-      await run({ action: "sign", key: "k", payload: { aud } }),
-    );
-    const out = structured(
-      await run({
-        action: "verify",
-        input: signed.token as string,
-        key: "k",
-        audience: expected,
-      }),
-    );
-    expect(out.valid).toBe(shouldBeValid);
-    if (!shouldBeValid) expect(String(out.failureReason)).toMatch(/aud/i);
-  });
+  ])(
+    "aud=%s vs expected=%j → valid:%s",
+    async (aud, expected, shouldBeValid) => {
+      const signed = structured(
+        await run({ action: "sign", key: "k", payload: { aud } }),
+      );
+      const out = structured(
+        await run({
+          action: "verify",
+          input: signed.token as string,
+          key: "k",
+          audience: expected,
+        }),
+      );
+      expect(out.valid).toBe(shouldBeValid);
+      if (!shouldBeValid) expect(String(out.failureReason)).toMatch(/aud/i);
+    },
+  );
   // Issuer matching: matching iss → valid, mismatching → invalid with reason.
   it.each<[string, string, boolean]>([
     ["https://issuer.example", "https://issuer.example", true],
     ["https://issuer.example", "https://other.example", false],
-  ])("iss=%s vs expected=%s → valid:%s", async (iss, expected, shouldBeValid) => {
-    const signed = structured(
-      await run({ action: "sign", key: "k", payload: { iss } }),
-    );
-    const out = structured(
-      await run({
-        action: "verify",
-        input: signed.token as string,
-        key: "k",
-        issuer: expected,
-      }),
-    );
-    expect(out.valid).toBe(shouldBeValid);
-    if (!shouldBeValid) expect(String(out.failureReason)).toMatch(/iss/i);
-  });
+  ])(
+    "iss=%s vs expected=%s → valid:%s",
+    async (iss, expected, shouldBeValid) => {
+      const signed = structured(
+        await run({ action: "sign", key: "k", payload: { iss } }),
+      );
+      const out = structured(
+        await run({
+          action: "verify",
+          input: signed.token as string,
+          key: "k",
+          issuer: expected,
+        }),
+      );
+      expect(out.valid).toBe(shouldBeValid);
+      if (!shouldBeValid) expect(String(out.failureReason)).toMatch(/iss/i);
+    },
+  );
   // exp / nbf time-window checks: a token valid only in the past (exp) or
   // only in the future (nbf) is rejected; one inside the window is accepted.
   it.each<[string, Record<string, unknown>, boolean, RegExp]>([
@@ -220,73 +224,72 @@ describe("jwt: asymmetric algorithms via PEM", () => {
   // Each: sign with PKCS8 private key, verify with SPKI public key → valid;
   // verify against a DIFFERENT keypair's public key → invalid.
   const ALGS = ["RS256", "RS384", "PS256", "ES256", "ES384", "EdDSA"];
-  it.each(
-    ALGS,
-  )("%s signs with PKCS8 and verifies with the matching SPKI key", async (algorithm) => {
-    const { publicKey, privateKey } = await generateKeyPair(algorithm, {
-      extractable: true,
-    });
-    const signed = structured(
-      await run({
-        action: "sign",
-        algorithm,
-        key: await exportPKCS8(privateKey),
-        payload: { sub: `${algorithm}-user` },
-        expiresIn: "1h",
-      }),
-    );
-    const out = structured(
-      await run({
-        action: "verify",
-        input: signed.token as string,
-        key: await exportSPKI(publicKey),
-      }),
-    );
-    expect(out.valid).toBe(true);
-    expect((out.payload as Record<string, unknown>).sub).toBe(
-      `${algorithm}-user`,
-    );
-  });
-  it.each(
-    ALGS,
-  )("%s token verified against the WRONG keypair is invalid", async (algorithm) => {
-    const a = await generateKeyPair(algorithm, { extractable: true });
-    const b = await generateKeyPair(algorithm, { extractable: true });
-    const signed = structured(
-      await run({
-        action: "sign",
-        algorithm,
-        key: await exportPKCS8(a.privateKey),
-        payload: { sub: "x" },
-      }),
-    );
-    const out = structured(
-      await run({
-        action: "verify",
-        input: signed.token as string,
-        key: await exportSPKI(b.publicKey),
-      }),
-    );
-    expect(out.valid).toBe(false);
-  });
+  it.each(ALGS)(
+    "%s signs with PKCS8 and verifies with the matching SPKI key",
+    async (algorithm) => {
+      const { publicKey, privateKey } = await generateKeyPair(algorithm, {
+        extractable: true,
+      });
+      const signed = structured(
+        await run({
+          action: "sign",
+          algorithm,
+          key: await exportPKCS8(privateKey),
+          payload: { sub: `${algorithm}-user` },
+          expiresIn: "1h",
+        }),
+      );
+      const out = structured(
+        await run({
+          action: "verify",
+          input: signed.token as string,
+          key: await exportSPKI(publicKey),
+        }),
+      );
+      expect(out.valid).toBe(true);
+      expect((out.payload as Record<string, unknown>).sub).toBe(
+        `${algorithm}-user`,
+      );
+    },
+  );
+  it.each(ALGS)(
+    "%s token verified against the WRONG keypair is invalid",
+    async (algorithm) => {
+      const a = await generateKeyPair(algorithm, { extractable: true });
+      const b = await generateKeyPair(algorithm, { extractable: true });
+      const signed = structured(
+        await run({
+          action: "sign",
+          algorithm,
+          key: await exportPKCS8(a.privateKey),
+          payload: { sub: "x" },
+        }),
+      );
+      const out = structured(
+        await run({
+          action: "verify",
+          input: signed.token as string,
+          key: await exportSPKI(b.publicKey),
+        }),
+      );
+      expect(out.valid).toBe(false);
+    },
+  );
 });
 
 describe("jwt: verify contract — never throws past valid:false", () => {
   // A range of structurally-wrong tokens — none throws; all return
   // valid:false with a part-count reason.
-  it.each([
-    "abc.def",
-    "single",
-    "a.b.c.d",
-    "",
-    ".....",
-  ])("returns valid:false (not a thrown error) for %j", async (input) => {
-    const out = structured(
-      await run({ action: "verify", input, key: "secret" }),
-    );
-    expect(out.valid).toBe(false);
-    expect(String(out.failureReason)).toMatch(/3 dot-separated parts/);
-  });
+  it.each(["abc.def", "single", "a.b.c.d", "", "....."])(
+    "returns valid:false (not a thrown error) for %j",
+    async (input) => {
+      const out = structured(
+        await run({ action: "verify", input, key: "secret" }),
+      );
+      expect(out.valid).toBe(false);
+      expect(String(out.failureReason)).toMatch(/3 dot-separated parts/);
+    },
+  );
 
   it("returns valid:false for garbage PEM key", async () => {
     const res = await run({

@@ -101,14 +101,14 @@ describe("json-query: goessner vectors", () => {
 
   // Indices that fall outside the array are not an error — they just match
   // nothing. (Distinct from a malformed index, which IS an error.)
-  it.each([
-    ["$.store.book[99].title"],
-    ["$.store.book[-99].title"],
-  ])("out-of-range index %s is an empty success", async (query) => {
-    const out = await structured({ query });
-    expect(out.count).toBe(0);
-    expect(out.truncated).toBe(false);
-  });
+  it.each([["$.store.book[99].title"], ["$.store.book[-99].title"]])(
+    "out-of-range index %s is an empty success",
+    async (query) => {
+      const out = await structured({ query });
+      expect(out.count).toBe(0);
+      expect(out.truncated).toBe(false);
+    },
+  );
 
   // Slices and unions. Expectations computed by hand against the 4-book array
   // [0:Sayings, 1:Sword, 2:Moby, 3:Rings].

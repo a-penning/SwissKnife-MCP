@@ -61,13 +61,14 @@ describe("script tool: happy paths", () => {
       ["hello", "world"],
     ],
   ];
-  it.each(
-    valueCases,
-  )("returns the expected value for %s (toolCalls=0)", async (_label, source, expected) => {
-    const r = structured(await run({ source }));
-    expect(r.result).toEqual(expected);
-    expect(r.toolCalls).toBe(0);
-  });
+  it.each(valueCases)(
+    "returns the expected value for %s (toolCalls=0)",
+    async (_label, source, expected) => {
+      const r = structured(await run({ source }));
+      expect(r.result).toEqual(expected);
+      expect(r.toolCalls).toBe(0);
+    },
+  );
 
   // args is injected as a global; a range of arg payloads + access patterns.
   const argCases: Array<[string, string, unknown, unknown]> = [
@@ -83,12 +84,13 @@ describe("script tool: happy paths", () => {
     ["reflects a number arg", "return args * 2;", 21, 42],
     ["reflects a boolean arg", "return typeof args;", true, "boolean"],
   ];
-  it.each(
-    argCases,
-  )("%s from the args global", async (_label, source, args, expected) => {
-    const r = structured(await run({ source, args }));
-    expect(r.result).toEqual(expected);
-  });
+  it.each(argCases)(
+    "%s from the args global",
+    async (_label, source, args, expected) => {
+      const r = structured(await run({ source, args }));
+      expect(r.result).toEqual(expected);
+    },
+  );
 
   // console.* methods map to [level]-tagged lines in the logs array.
   const logCases: Array<[string, string, number, string[]]> = [
@@ -108,15 +110,16 @@ describe("script tool: happy paths", () => {
     ],
     ["no logging", `return 1;`, 0, []],
   ];
-  it.each(
-    logCases,
-  )("captures %s into the logs array", async (_label, source, count, tags) => {
-    const r = structured(await run({ source }));
-    expect(r.logs.length).toBe(count);
-    tags.forEach((tag, i) => {
-      expect(r.logs[i]).toContain(tag);
-    });
-  });
+  it.each(logCases)(
+    "captures %s into the logs array",
+    async (_label, source, count, tags) => {
+      const r = structured(await run({ source }));
+      expect(r.logs.length).toBe(count);
+      tags.forEach((tag, i) => {
+        expect(r.logs[i]).toContain(tag);
+      });
+    },
+  );
 });
 
 describe("script tool: tool access", () => {
@@ -191,12 +194,12 @@ describe("script tool: tool access", () => {
       `await tools["convert-data"]({ from: "json", to: "yaml", input: "{nope" });`,
     ],
   ];
-  it.each(
-    failingCalls,
-  )("tool error from %s throws inside the script and is catchable", async (_label, call) => {
-    const r = structured(
-      await run({
-        source: `
+  it.each(failingCalls)(
+    "tool error from %s throws inside the script and is catchable",
+    async (_label, call) => {
+      const r = structured(
+        await run({
+          source: `
             try {
               ${call}
               return { caught: false };
@@ -204,10 +207,11 @@ describe("script tool: tool access", () => {
               return { caught: true, hasMsg: typeof e.message === "string" };
             }
           `,
-      }),
-    );
-    expect(r.result).toEqual({ caught: true, hasMsg: true });
-  });
+        }),
+      );
+      expect(r.result).toEqual({ caught: true, hasMsg: true });
+    },
+  );
 
   it("script tool itself is not reachable from inside the VM", async () => {
     const r = structured(await run({ source: "return typeof tools.script;" }));
@@ -264,13 +268,14 @@ describe("script tool: error envelopes", () => {
     ["unexpected token", "const = 5;"],
     ["bad arrow", "const f = => 1;"],
   ];
-  it.each(
-    syntaxSources,
-  )("flags errorType=syntax for %s", async (_label, source) => {
-    const res = await run({ source });
-    expect(errorText(res)).toContain("syntax");
-    expect(errorEnvelope(res).errorType).toBe("syntax");
-  });
+  it.each(syntaxSources)(
+    "flags errorType=syntax for %s",
+    async (_label, source) => {
+      const res = await run({ source });
+      expect(errorText(res)).toContain("syntax");
+      expect(errorEnvelope(res).errorType).toBe("syntax");
+    },
+  );
 
   // Runtime throws (after the source parses) all collapse to errorType=runtime.
   const runtimeSources: Array<[string, string]> = [
@@ -280,12 +285,13 @@ describe("script tool: error envelopes", () => {
     ["property of null", "return null.foo;"],
     ["rejected await", "return await Promise.reject(new Error('nope'));"],
   ];
-  it.each(
-    runtimeSources,
-  )("flags errorType=runtime for %s", async (_label, source) => {
-    const res = await run({ source });
-    expect(errorEnvelope(res).errorType).toBe("runtime");
-  });
+  it.each(runtimeSources)(
+    "flags errorType=runtime for %s",
+    async (_label, source) => {
+      const res = await run({ source });
+      expect(errorEnvelope(res).errorType).toBe("runtime");
+    },
+  );
 
   it("infinite recursion surfaces errorType=stack", async () => {
     const res = await run({
@@ -308,12 +314,13 @@ describe("script tool: error envelopes", () => {
     ["a symbol", "return Symbol('x');"],
     ["bare undefined", "return undefined;"],
   ];
-  it.each(
-    nullishReturns,
-  )("normalises %s to a successful null result", async (_label, source) => {
-    const r = structured(await run({ source }));
-    expect(r.result).toBeNull();
-  });
+  it.each(nullishReturns)(
+    "normalises %s to a successful null result",
+    async (_label, source) => {
+      const r = structured(await run({ source }));
+      expect(r.result).toBeNull();
+    },
+  );
 
   // A returned function is dumped by QuickJS as its source-text string (its
   // toString() form), so the run succeeds with a string result rather than an
@@ -368,13 +375,14 @@ describe("script tool: error envelopes", () => {
   // with source-too-large; sources comfortably under it run normally. We probe
   // both sides with a margin so the boundary isn't byte-exact-brittle.
   const tooLargeSizes = [70_000, 100_000, 200_000];
-  it.each(
-    tooLargeSizes,
-  )("rejects a %d-byte source as source-too-large", async (size) => {
-    const res = await run({ source: `// ${"x".repeat(size)}` });
-    expect(errorText(res)).toMatch(/source-too-large/);
-    expect(errorEnvelope(res).errorType).toBe("source-too-large");
-  });
+  it.each(tooLargeSizes)(
+    "rejects a %d-byte source as source-too-large",
+    async (size) => {
+      const res = await run({ source: `// ${"x".repeat(size)}` });
+      expect(errorText(res)).toMatch(/source-too-large/);
+      expect(errorEnvelope(res).errorType).toBe("source-too-large");
+    },
+  );
   const okSizes = [1_000, 30_000, 60_000];
   it.each(okSizes)("accepts a %d-byte source", async (size) => {
     const res = await run({ source: `${"// x\n".repeat(size / 5)}return 1;` });
@@ -384,21 +392,22 @@ describe("script tool: error envelopes", () => {
   // tool-call-limit must fire exactly at the configured cap, and the reported
   // toolCalls counter must equal that cap (callers rely on the exact count).
   const caps = [1, 2, 5];
-  it.each(
-    caps,
-  )("tool-call-limit fires at maxToolCalls=%d with the counter pinned to the cap", async (cap) => {
-    const res = await run({
-      maxToolCalls: cap,
-      source: `
+  it.each(caps)(
+    "tool-call-limit fires at maxToolCalls=%d with the counter pinned to the cap",
+    async (cap) => {
+      const res = await run({
+        maxToolCalls: cap,
+        source: `
           for (let i = 0; i < 50; i++) {
             await tools.time({ action: "now" });
           }
           return "should never reach here";
         `,
-    });
-    expect(errorText(res)).toMatch(/tool-call-limit/);
-    expect(errorEnvelope(res).toolCalls).toBe(cap);
-  });
+      });
+      expect(errorText(res)).toMatch(/tool-call-limit/);
+      expect(errorEnvelope(res).toolCalls).toBe(cap);
+    },
+  );
 
   it("tool-call-limit fires when a script exceeds maxToolCalls", async () => {
     const res = await run({

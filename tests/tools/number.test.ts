@@ -36,15 +36,16 @@ describe("number: bytes", () => {
     [1_048_576, "1.05 MB", "1 MiB"],
     [1_234_567_890, "1.23 GB", "1.15 GiB"],
   ];
-  it.each(
-    FORMAT_CASES,
-  )("formats numeric byte count %i as SI=%s / IEC=%s", async (input, si, iec) => {
-    expect(await structured({ action: "bytes", input })).toMatchObject({
-      bytes: input,
-      si,
-      iec,
-    });
-  });
+  it.each(FORMAT_CASES)(
+    "formats numeric byte count %i as SI=%s / IEC=%s",
+    async (input, si, iec) => {
+      expect(await structured({ action: "bytes", input })).toMatchObject({
+        bytes: input,
+        si,
+        iec,
+      });
+    },
+  );
 
   // Byte string parsing: SI suffixes are powers of 1000, IEC suffixes powers
   // of 1024. Expected byte counts computed independently.
@@ -59,13 +60,14 @@ describe("number: bytes", () => {
     ["512", 512],
     ["1B", 1],
   ];
-  it.each(
-    PARSE_CASES,
-  )("parses unit string %s as %i bytes", async (input, bytes) => {
-    expect(await structured({ action: "bytes", input })).toMatchObject({
-      bytes,
-    });
-  });
+  it.each(PARSE_CASES)(
+    "parses unit string %s as %i bytes",
+    async (input, bytes) => {
+      expect(await structured({ action: "bytes", input })).toMatchObject({
+        bytes,
+      });
+    },
+  );
 
   // Distinct failure modes for byte parsing/validation.
   const INVALID: Array<[string, string | number]> = [
@@ -93,13 +95,14 @@ describe("number: duration", () => {
       [3, "s", 3000, "3s", "PT3S", "0:00:03"],
       [1, "w", 604_800_000, "7d", "P7D", "168:00:00"],
     ];
-  it.each(
-    NUMERIC,
-  )("converts %i %s to %i ms", async (input, unit, ms, human, iso, clock) => {
-    expect(await structured({ action: "duration", input, unit })).toMatchObject(
-      { ms, seconds: ms / 1000, human, iso, clock },
-    );
-  });
+  it.each(NUMERIC)(
+    "converts %i %s to %i ms",
+    async (input, unit, ms, human, iso, clock) => {
+      expect(
+        await structured({ action: "duration", input, unit }),
+      ).toMatchObject({ ms, seconds: ms / 1000, human, iso, clock });
+    },
+  );
 
   // String forms: token, ISO-8601, and clock. ms computed independently.
   const STRINGS: Array<[string, number]> = [
@@ -172,14 +175,15 @@ describe("number: roman", () => {
     ["42", 42, "XLII"],
     ["1994", 1994, "MCMXCIV"],
   ];
-  it.each(
-    PARSE,
-  )("parses string %s as number=%i roman=%s", async (input, number, roman) => {
-    expect(await structured({ action: "roman", input })).toMatchObject({
-      number,
-      roman,
-    });
-  });
+  it.each(PARSE)(
+    "parses string %s as number=%i roman=%s",
+    async (input, number, roman) => {
+      expect(await structured({ action: "roman", input })).toMatchObject({
+        number,
+        roman,
+      });
+    },
+  );
 
   // Distinct failure modes: non-canonical numerals, out-of-range integers,
   // and junk.
@@ -212,13 +216,14 @@ describe("number: format", () => {
     [123456, "en-US", "engineering", "123.456E3"],
     [123456, "en-US", "scientific", "1.235E5"],
   ];
-  it.each(
-    FORMAT,
-  )("formats %f (%s/%s) as %s", async (input, locale, notation, formatted) => {
-    expect(
-      await structured({ action: "format", input, locale, notation }),
-    ).toMatchObject({ formatted, locale, notation });
-  });
+  it.each(FORMAT)(
+    "formats %f (%s/%s) as %s",
+    async (input, locale, notation, formatted) => {
+      expect(
+        await structured({ action: "format", input, locale, notation }),
+      ).toMatchObject({ formatted, locale, notation });
+    },
+  );
 
   it("respects locale and maximumFractionDigits (de-DE)", async () => {
     expect(

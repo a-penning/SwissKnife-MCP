@@ -80,38 +80,35 @@ describe("ssrf bypass coverage: inspect kind:tls", () => {
 });
 
 describe("ssrf bypass coverage: inspect kind:whois server override", () => {
-  it.each([
-    "127.0.0.1",
-    "169.254.169.254",
-    "10.0.0.1",
-  ])("refuses whois lookup via private server %s when the guard is on", async (server) => {
-    const res = (await inspectTool.handler({
-      kind: "whois",
-      value: "example.com",
-      whoisServer: server,
-      timeoutMs: 2000,
-    } as Parameters<typeof inspectTool.handler>[0])) as CallToolResult;
-    expect(res.isError).toBe(true);
-    expect(errorText(res)).toMatch(/blocked whois server/);
-  });
+  it.each(["127.0.0.1", "169.254.169.254", "10.0.0.1"])(
+    "refuses whois lookup via private server %s when the guard is on",
+    async (server) => {
+      const res = (await inspectTool.handler({
+        kind: "whois",
+        value: "example.com",
+        whoisServer: server,
+        timeoutMs: 2000,
+      } as Parameters<typeof inspectTool.handler>[0])) as CallToolResult;
+      expect(res.isError).toBe(true);
+      expect(errorText(res)).toMatch(/blocked whois server/);
+    },
+  );
 });
 
 describe("ssrf bypass coverage: dns resolver param", () => {
-  it.each([
-    "127.0.0.1",
-    "169.254.169.254",
-    "10.0.0.1",
-    "::1",
-  ])("refuses dns queries via private resolver %s when the guard is on", async (resolver) => {
-    const res = (await dnsTool.handler({
-      host: "example.com",
-      type: "A",
-      resolver,
-      timeoutMs: 2000,
-    } as Parameters<typeof dnsTool.handler>[0])) as CallToolResult;
-    expect(res.isError).toBe(true);
-    expect(errorText(res)).toMatch(/private\/loopback resolver/);
-  });
+  it.each(["127.0.0.1", "169.254.169.254", "10.0.0.1", "::1"])(
+    "refuses dns queries via private resolver %s when the guard is on",
+    async (resolver) => {
+      const res = (await dnsTool.handler({
+        host: "example.com",
+        type: "A",
+        resolver,
+        timeoutMs: 2000,
+      } as Parameters<typeof dnsTool.handler>[0])) as CallToolResult;
+      expect(res.isError).toBe(true);
+      expect(errorText(res)).toMatch(/private\/loopback resolver/);
+    },
+  );
 });
 
 describe("ssrf bypass coverage: the refusal is gated on the env, not hard-coded", () => {

@@ -45,12 +45,15 @@ describe("diff: lines", () => {
     ["in-place change", "x\n", "y\n", 1, 1],
     ["two inserts", "x\n", "x\ny\nz\n", 2, 0],
     ["replace and append", "a\nb\n", "a\nB\nc\n", 2, 1],
-  ])("lines mode counts %s correctly", async (_name, a, b, additions, deletions) => {
-    const out = await structured({ a, b });
-    expect(out.additions).toBe(additions);
-    expect(out.deletions).toBe(deletions);
-    expect(out.identical).toBe(false);
-  });
+  ])(
+    "lines mode counts %s correctly",
+    async (_name, a, b, additions, deletions) => {
+      const out = await structured({ a, b });
+      expect(out.additions).toBe(additions);
+      expect(out.deletions).toBe(deletions);
+      expect(out.identical).toBe(false);
+    },
+  );
 
   // identical is anchored to BYTE equality. Whitespace / trailing-newline
   // differences are NOT identical even though they look similar.

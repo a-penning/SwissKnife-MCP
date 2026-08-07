@@ -93,24 +93,25 @@ describe("conformance: registry metadata", () => {
     expect(tools.length).toBe(new Set(tools.map((t) => t.name)).size);
   });
 
-  it.each(
-    tools.map((t) => [t.name, t] as const),
-  )("%s has well-formed metadata", (_name, tool) => {
-    // kebab-case, MCP-safe name.
-    expect(tool.name).toMatch(/^[a-z][a-z0-9-]*$/);
-    expect(typeof tool.title).toBe("string");
-    expect(tool.title.length).toBeGreaterThan(0);
-    // Description is what an LLM uses to pick the tool — must be substantial.
-    expect(typeof tool.description).toBe("string");
-    expect(tool.description.length).toBeGreaterThanOrEqual(40);
-    // inputSchema is a non-empty Zod raw shape.
-    const shape = tool.inputSchema as z.ZodRawShape;
-    expect(Object.keys(shape).length).toBeGreaterThan(0);
-    for (const [key, def] of Object.entries(shape)) {
-      expect(def instanceof z.ZodType, `${tool.name}.${key}`).toBe(true);
-    }
-    expect(typeof tool.handler).toBe("function");
-  });
+  it.each(tools.map((t) => [t.name, t] as const))(
+    "%s has well-formed metadata",
+    (_name, tool) => {
+      // kebab-case, MCP-safe name.
+      expect(tool.name).toMatch(/^[a-z][a-z0-9-]*$/);
+      expect(typeof tool.title).toBe("string");
+      expect(tool.title.length).toBeGreaterThan(0);
+      // Description is what an LLM uses to pick the tool — must be substantial.
+      expect(typeof tool.description).toBe("string");
+      expect(tool.description.length).toBeGreaterThanOrEqual(40);
+      // inputSchema is a non-empty Zod raw shape.
+      const shape = tool.inputSchema as z.ZodRawShape;
+      expect(Object.keys(shape).length).toBeGreaterThan(0);
+      for (const [key, def] of Object.entries(shape)) {
+        expect(def instanceof z.ZodType, `${tool.name}.${key}`).toBe(true);
+      }
+      expect(typeof tool.handler).toBe("function");
+    },
+  );
 });
 
 describe("conformance: fixture coverage (new tools must opt in)", () => {
@@ -219,48 +220,50 @@ const BATCH: BatchCase[] = [
 ];
 
 describe("conformance: batch tools share one envelope + isolate failures", () => {
-  it.each(
-    BATCH.map((c) => [c.tool, c] as const),
-  )("%s: all-valid array returns results[] with an (empty) failures[]", async (_name, c) => {
-    const tool = byName.get(c.tool);
-    if (!tool) throw new Error(`no such tool: ${c.tool}`);
-    const res = await invoke(tool, { ...c.base, [c.field]: c.valid });
-    expect(res.isError, JSON.stringify(res.content)).toBeFalsy();
-    const sc = res.structuredContent as {
-      results?: unknown[];
-      failures?: unknown[];
-    };
-    expect(Array.isArray(sc.results), `${c.tool}.results`).toBe(true);
-    expect(sc.results).toHaveLength(c.valid.length);
-    // failures must ALWAYS be present (CC-2), even when empty.
-    expect(Array.isArray(sc.failures), `${c.tool}.failures`).toBe(true);
-    expect(sc.failures).toHaveLength(0);
-  });
+  it.each(BATCH.map((c) => [c.tool, c] as const))(
+    "%s: all-valid array returns results[] with an (empty) failures[]",
+    async (_name, c) => {
+      const tool = byName.get(c.tool);
+      if (!tool) throw new Error(`no such tool: ${c.tool}`);
+      const res = await invoke(tool, { ...c.base, [c.field]: c.valid });
+      expect(res.isError, JSON.stringify(res.content)).toBeFalsy();
+      const sc = res.structuredContent as {
+        results?: unknown[];
+        failures?: unknown[];
+      };
+      expect(Array.isArray(sc.results), `${c.tool}.results`).toBe(true);
+      expect(sc.results).toHaveLength(c.valid.length);
+      // failures must ALWAYS be present (CC-2), even when empty.
+      expect(Array.isArray(sc.failures), `${c.tool}.failures`).toBe(true);
+      expect(sc.failures).toHaveLength(0);
+    },
+  );
 
-  it.each(
-    BATCH.map((c) => [c.tool, c] as const),
-  )("%s: a bad item is isolated into failures, good items still return", async (_name, c) => {
-    const tool = byName.get(c.tool);
-    if (!tool) throw new Error(`no such tool: ${c.tool}`);
-    let res: CallToolResult;
-    try {
-      res = await invoke(tool, { ...c.base, [c.field]: c.mixed });
-    } catch (e) {
-      throw new Error(`${c.tool}: batch threw on one bad item: ${String(e)}`);
-    }
-    expect(res.isError, `${c.tool} aborted the whole batch`).toBeFalsy();
-    const sc = res.structuredContent as {
-      results?: unknown[];
-      failures?: Array<{ index: number; value: unknown; error: string }>;
-    };
-    expect(sc.results).toHaveLength(c.mixed.length - c.badIndices.length);
-    expect(sc.failures).toHaveLength(c.badIndices.length);
-    for (const f of sc.failures ?? []) {
-      expect(typeof f.index).toBe("number");
-      expect(c.badIndices).toContain(f.index);
-      expect(typeof f.error).toBe("string");
-    }
-  });
+  it.each(BATCH.map((c) => [c.tool, c] as const))(
+    "%s: a bad item is isolated into failures, good items still return",
+    async (_name, c) => {
+      const tool = byName.get(c.tool);
+      if (!tool) throw new Error(`no such tool: ${c.tool}`);
+      let res: CallToolResult;
+      try {
+        res = await invoke(tool, { ...c.base, [c.field]: c.mixed });
+      } catch (e) {
+        throw new Error(`${c.tool}: batch threw on one bad item: ${String(e)}`);
+      }
+      expect(res.isError, `${c.tool} aborted the whole batch`).toBeFalsy();
+      const sc = res.structuredContent as {
+        results?: unknown[];
+        failures?: Array<{ index: number; value: unknown; error: string }>;
+      };
+      expect(sc.results).toHaveLength(c.mixed.length - c.badIndices.length);
+      expect(sc.failures).toHaveLength(c.badIndices.length);
+      for (const f of sc.failures ?? []) {
+        expect(typeof f.index).toBe("number");
+        expect(c.badIndices).toContain(f.index);
+        expect(typeof f.error).toBe("string");
+      }
+    },
+  );
 });
 
 describe("conformance: script gateway parity with direct handler", () => {
@@ -327,27 +330,28 @@ describe("conformance: determinism (the core 'never guessed' promise)", () => {
 
 describe("conformance: error-path contract (err(), never a throw)", () => {
   const cases = Object.keys(SAD).map((name) => [name] as const);
-  it.each(
-    cases,
-  )("%s returns err() on bad input, never throws", async (name) => {
-    const tool = byName.get(name);
-    if (!tool) throw new Error(`no such tool: ${name}`);
+  it.each(cases)(
+    "%s returns err() on bad input, never throws",
+    async (name) => {
+      const tool = byName.get(name);
+      if (!tool) throw new Error(`no such tool: ${name}`);
 
-    let res: CallToolResult;
-    try {
-      res = await invoke(tool, SAD[name] as Fixture);
-    } catch (e) {
-      throw new Error(
-        `${name}: handler threw instead of returning err(): ${String(e)}`,
-      );
-    }
+      let res: CallToolResult;
+      try {
+        res = await invoke(tool, SAD[name] as Fixture);
+      } catch (e) {
+        throw new Error(
+          `${name}: handler threw instead of returning err(): ${String(e)}`,
+        );
+      }
 
-    expect(res.isError, `${name} should have errored`).toBe(true);
-    const block = res.content?.[0] as { type?: string; text?: string };
-    expect(block?.type).toBe("text");
-    // err() prefixes every message with "Error: " (see src/tools/types.ts).
-    expect(block?.text ?? "").toMatch(/^Error: /);
-  });
+      expect(res.isError, `${name} should have errored`).toBe(true);
+      const block = res.content?.[0] as { type?: string; text?: string };
+      expect(block?.type).toBe("text");
+      // err() prefixes every message with "Error: " (see src/tools/types.ts).
+      expect(block?.text ?? "").toMatch(/^Error: /);
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -415,19 +419,20 @@ const NUMERIC_COERCION: CoerceCase[] = [
 ];
 
 describe("conformance: numeric inputs coerce from strings", () => {
-  it.each(
-    NUMERIC_COERCION.map((c) => [c.tool, c] as const),
-  )("%s: string-coerced number passes schema validation", async (_n, c) => {
-    const tool = byName.get(c.tool);
-    if (!tool) throw new Error(`no such tool: ${c.tool}`);
-    let res: CallToolResult;
-    try {
-      res = await invoke(tool, c.args);
-    } catch (e) {
-      throw new Error(
-        `${c.tool}: handler threw on coerced input: ${String(e)}`,
-      );
-    }
-    expect(res.isError, JSON.stringify(res.content)).toBeFalsy();
-  });
+  it.each(NUMERIC_COERCION.map((c) => [c.tool, c] as const))(
+    "%s: string-coerced number passes schema validation",
+    async (_n, c) => {
+      const tool = byName.get(c.tool);
+      if (!tool) throw new Error(`no such tool: ${c.tool}`);
+      let res: CallToolResult;
+      try {
+        res = await invoke(tool, c.args);
+      } catch (e) {
+        throw new Error(
+          `${c.tool}: handler threw on coerced input: ${String(e)}`,
+        );
+      }
+      expect(res.isError, JSON.stringify(res.content)).toBeFalsy();
+    },
+  );
 });

@@ -74,14 +74,19 @@ describe("regex: match", () => {
         { match: "cat", index: 13, captures: [] },
       ],
     ],
-  ])("match %j over %j yields the expected matches", async (pattern, input, expected) => {
-    const out = await structured({ action: "match", pattern, input });
-    expect(out.count).toBe(expected.length);
-    const matches = out.matches as Array<Record<string, unknown>>;
-    for (let i = 0; i < expected.length; i++) {
-      expect(matches[i]).toMatchObject(expected[i] as Record<string, unknown>);
-    }
-  });
+  ])(
+    "match %j over %j yields the expected matches",
+    async (pattern, input, expected) => {
+      const out = await structured({ action: "match", pattern, input });
+      expect(out.count).toBe(expected.length);
+      const matches = out.matches as Array<Record<string, unknown>>;
+      for (let i = 0; i < expected.length; i++) {
+        expect(matches[i]).toMatchObject(
+          expected[i] as Record<string, unknown>,
+        );
+      }
+    },
+  );
   it("supports named groups via the `groups` object (RegExpMatchArray convention)", async () => {
     const out = await structured({
       action: "match",
@@ -139,17 +144,20 @@ describe("regex: replace", () => {
     ["a", "banana", "X", "g", "bXnXnX", 3],
     ["(\\w)(\\w)", "ab", "$&!", "", "ab!", 1],
     ["z", "abc", "Q", "g", "abc", 0], // no match -> unchanged, 0 replacements
-  ])("replace %j in %j with %j (flags %j)", async (pattern, input, replacement, flags, result, replacements) => {
-    const out = await structured({
-      action: "replace",
-      pattern,
-      input,
-      replacement,
-      flags,
-    });
-    expect(out.result).toBe(result);
-    expect(out.replacements).toBe(replacements);
-  });
+  ])(
+    "replace %j in %j with %j (flags %j)",
+    async (pattern, input, replacement, flags, result, replacements) => {
+      const out = await structured({
+        action: "replace",
+        pattern,
+        input,
+        replacement,
+        flags,
+      });
+      expect(out.result).toBe(result);
+      expect(out.replacements).toBe(replacements);
+    },
+  );
   it.each([
     [{ pattern: "(unclosed", input: "x", replacement: "y" }], // bad pattern
     [{ pattern: "a", input: "a" }], // missing replacement
@@ -262,11 +270,14 @@ describe("regex: match metadata across a range of inputs", () => {
     ["\\d+", "1 22 333", [0, 2, 5]],
     ["x", "axbxc", [1, 3]],
     ["\\bword\\b", "word a word", [0, 7]],
-  ])("%j over %j reports the right start indices", async (pattern, input, expected) => {
-    const out = await structured({ action: "match", pattern, input });
-    const matches = out.matches as Array<{ index: number }>;
-    expect(matches.map((m) => m.index)).toEqual(expected);
-  });
+  ])(
+    "%j over %j reports the right start indices",
+    async (pattern, input, expected) => {
+      const out = await structured({ action: "match", pattern, input });
+      const matches = out.matches as Array<{ index: number }>;
+      expect(matches.map((m) => m.index)).toEqual(expected);
+    },
+  );
 
   it("surfaces match indices when the `d` flag is set", async () => {
     // The `d` (hasIndices) flag adds per-match and per-capture-group [start, end)

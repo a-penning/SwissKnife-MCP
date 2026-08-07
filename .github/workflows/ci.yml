@@ -36,10 +36,15 @@ jobs:
       - run: docker build -t swissknife-mcp:ci .
 
   dependency-review:
-    # Block PRs that introduce known-vulnerable dependencies.
+    # Flag PRs that introduce known-vulnerable dependencies. Non-blocking:
+    # the action hard-errors ("Dependency review is not supported on this
+    # repository") until the repo's Dependency graph is enabled in Settings →
+    # Code security, which would otherwise fail every PR. Enable the graph,
+    # then drop continue-on-error to make this gate enforcing again.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
       - uses: actions/dependency-review-action@v5

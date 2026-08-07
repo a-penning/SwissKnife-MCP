@@ -6,12 +6,13 @@
 
 A self-hostable **HTTP MCP server of deterministic developer utilities** — base64, JWT, hashing, timestamps, UUIDs, data-format conversion and friends. Connect it to any MCP client and stop pasting your tokens into random utility websites: the LLM does the job exactly, with zero guesswork.
 
-> **Status: v0.1.0** — 17 tools implemented, covered by per-tool vector tests and a cross-tool conformance suite. Not published to npm or any registry, by design.
+> **Status: v0.1.0** — 18 tools implemented, covered by per-tool vector tests and a cross-tool conformance suite. Not published to npm or any registry, by design.
 
 ## Features
 
 - 🔢 **Encode / decode** — base64, base64url, base32, hex, URL, HTML entities, unicode escapes, number bases, gzip/deflate/brotli
 - 🔐 **Hashing** — MD5, SHA-1/2/3, BLAKE2, CRC32, and HMAC variants
+- 🔏 **Crypto** — AEAD (AES-GCM, ChaCha20-Poly1305), RSA-OAEP, sign/verify (Ed25519 / ECDSA / RSA-PSS), key generation (raw + OpenPGP), KDFs (Argon2id, scrypt, PBKDF2, HKDF), ECDH, PEM ↔ DER ↔ JWK, inspect
 - 🎫 **JWT** — decode, verify (HMAC / RSA / EC / EdDSA / JWKS), sign
 - 🆔 **Identifiers** — UUID v4/v5/v7, ULID, Nano ID, random strings, passwords
 - ⏰ **Time** — unix ↔ ISO conversion, timezones, date math, cron explanation + next runs
@@ -28,7 +29,7 @@ A self-hostable **HTTP MCP server of deterministic developer utilities** — bas
 - 🎨 **Color** — hex / rgb / hsl / hwb / named conversion + WCAG contrast
 - 🧰 **Script** — a sandboxed JS environment that composes every other tool in one call
 
-All packed into **17 tools** (not 40) so your MCP client's tool list stays clean. Every tool is a pure, deterministic function — same input, same output, explicit errors. The exceptions are the network-facing ones whose job *is* to observe live state (`http`, `dns`, `inspect`'s `tls` / `whois` modes, `jwt` verifying via a JWKS URL), and the document-shaped tools that touch the network only when the caller opts in by passing `inputUrl` (`convert-data`, `diff` (`aUrl`/`bUrl`), `encode`, `hash`, `json-query`, `text`, `regex`, and `jwt` — which can fetch the token to inspect). Everything else is pure-compute.
+All packed into **18 tools** so your MCP client's tool list stays clean. Every tool is a pure, deterministic function — same input, same output, explicit errors. The exceptions are the network-facing ones whose job *is* to observe live state (`http`, `dns`, `inspect`'s `tls` / `whois` modes, `jwt` verifying via a JWKS URL), and the document-shaped tools that touch the network only when the caller opts in by passing `inputUrl` (`convert-data`, `diff` (`aUrl`/`bUrl`), `encode`, `hash`, `json-query`, `text`, `regex`, and `jwt` — which can fetch the token to inspect). Everything else is pure-compute.
 
 ## Quickstart
 

@@ -44,6 +44,16 @@ const HAPPY: Record<string, Fixture> = {
   net: { action: "parse", value: "192.168.1.1" },
   color: { input: "#ff0000" },
   script: { source: "return 1 + 1;" },
+  // pbkdf2 with a fixed salt is deterministic and offline — perfect for the
+  // happy-path / determinism conformance gates.
+  crypto: {
+    action: "derive",
+    method: "pbkdf2",
+    password: "correct horse battery staple",
+    salt: "AAAAAAAAAAAAAAAAAAAAAA==",
+    keyLength: 16,
+    params: { iterations: 1000 },
+  },
 };
 
 // Tools with no offline happy path. They still get metadata + error-contract
@@ -70,6 +80,8 @@ const SAD: Record<string, Fixture> = {
   script: { source: "this is not valid javascript ((" },
   dns: { host: "a", ip: "1.2.3.4" }, // mutually exclusive — offline validation
   http: { url: "not-a-url" }, // invalid URL — offline validation
+  // Unsupported method → err() with code unsupported_algorithm, no network.
+  crypto: { action: "encrypt", method: "aes-cbc" },
 };
 
 function schemaOf(tool: (typeof tools)[number]) {

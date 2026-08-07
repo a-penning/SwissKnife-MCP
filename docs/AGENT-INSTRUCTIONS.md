@@ -1,8 +1,8 @@
 # Using SwissKnife MCP
 
-17 deterministic developer-utility tools:
+18 deterministic developer-utility tools:
 
-`color`, `convert-data`, `diff`, `dns`, `encode`, `hash`, `http`, `id`, `inspect`, `json-query`, `jwt`, `net`, `number`, `regex`, `script`, `text`, `time`
+`color`, `convert-data`, `crypto`, `diff`, `dns`, `encode`, `hash`, `http`, `id`, `inspect`, `json-query`, `jwt`, `net`, `number`, `regex`, `script`, `text`, `time`
 
 Each tool's purpose, schema, and usage examples are in its MCP description.
 

@@ -234,12 +234,49 @@ the rule it enforces stay greppable together:
   is always an array; plus the result-shape, determinism, and batch-envelope
   contracts).
 - **PV-N — Parameter-Validation rules.** Boundary-validation behaviours: strict
-  unknown-key rejection, renamed-param migration hints, numeric coercion from
-  strings, etc.
+  unknown-key rejection, renamed-param migration hints, primitive coercion from
+  string forms, etc.
 
 The authoritative list lives in `tests/conformance.test.ts`. When you add a
 cross-cutting invariant or a parameter-validation rule, give it the next number
 and tag the test.
+
+### The harness-coercion contract — required for every non-string field
+
+Claude's tool-call harness serializes every parameter value as a string before
+it reaches the MCP server (the same flow Claude Code, Desktop, and the SDK
+default-transport all use). When the LLM writes `byteLength: 32`, the wire
+payload is `"byteLength": "32"`; `armor: true` becomes `"armor": "true"`.
+
+Strict Zod types reject those payloads. The fix is **coercion at the schema
+boundary**, and the testing requirement is **proving both forms work** — see
+[DEVELOPMENT.md](DEVELOPMENT.md#the-harness-coercion-trap) for the schema-side
+rules. The tests pin the contract:
+
+- For every non-string field, `it.each` over `(native, string-form)` pairs
+  asserting **identical** results:
+  ```ts
+  it.each([
+    ["native bool",    { armor: true  }],
+    ["string-form",    { armor: "true" }],
+    ["native number",  { byteLength: 32   }],
+    ["string-form",    { byteLength: "32" }],
+  ])("%s coerces", (_label, override) => { /* same expected output */ });
+  ```
+- **Cross-path parity.** The conformance suite's script-gateway parity block
+  (CC-N) automatically asserts that calling a tool via `tools.<name>()` inside
+  `script` returns the same shape as a direct handler call. Boolean / number /
+  array coercion bugs typically surface here as **script accepts, direct
+  rejects** — treat any such divergence as a fix-me spec, not a quirk.
+- **Negative coverage stays strict.** Coercion is opt-in per-type, not a free
+  pass — `armor: "yes"` / `byteLength: "abc"` / `recipients: "not-an-array"`
+  must still be rejected with the usual schema error. The coercion accepts the
+  obvious string forms (`"true"`/`"false"`, decimal-numeric strings, JSON-array
+  strings) and nothing else.
+
+This trap recurs across tools every time someone reaches for `z.boolean()` /
+`z.number()` / `z.array()` directly. Catching it in the test suite is cheaper
+than catching it in the field.
 
 ---
 

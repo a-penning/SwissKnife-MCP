@@ -91,12 +91,37 @@ curl -s http://localhost:6789/mcp \
 5. Give it an accurate, LLM-facing description (follow the conventions in
    [TOOLS.md](TOOLS.md)).
 
+Before writing the handler, scan the
+[shared-helpers inventory in TOOLS.md](TOOLS.md#shared-helpers--reach-for-these-before-reinventing)
+— `errors`, `input`, `batch`, `ssrf`, `strict-codec`, `datetime`, `semaphore`,
+and the boundary helpers in `src/tools/types.ts` already cover most of the
+recurring patterns (URL fetching, batch envelopes, schema coercion, strict
+base64/hex decoding). Reaching for one of those over a hand-rolled equivalent
+is the expected default.
+
 Checklist for the `ToolDef` (see [TOOLS.md](TOOLS.md) for the full conventions):
 - Description states *when to use it* and *what it guarantees* (deterministic, no network).
 - Enum-discriminated `action`/`format` rather than a new tool per operation.
 - `outputSchema` + `structuredContent` returned alongside readable text.
 - Errors as `isError: true` results with precise messages — never a thrown exception.
 - Array input (if supported) returns the `{ results, failures }` batch envelope.
+- **Non-string fields coerce from their string forms at the boundary.** See "The harness-coercion trap" below.
+
+## The harness-coercion trap
+
+Claude's tool-call harness serializes **every** parameter value as a string before it hits the MCP server. When the LLM writes `byteLength: 32` or `armor: true`, the wire payload arrives as `{"byteLength": "32", "armor": "true"}`. Strict-typed schemas reject those calls — and the resulting "expected boolean, received string" / "expected number, received string" rejection is one of the most-repeated failure modes we hit across tools.
+
+The fix is **coercion at the schema boundary**, not strict types:
+
+| Field type | Wrong | Right |
+|---|---|---|
+| number / integer | `z.number()` | `z.coerce.number()` (then refine for `int`, range) |
+| boolean | `z.boolean()` | A boolean schema that accepts `"true"`/`"false"` strings as well as real booleans |
+| array / object | `z.array(...)` | Schema that pre-parses JSON-string forms (`"[\"a\",\"b\"]"` → `["a","b"]`) before validating |
+
+This is **only** required at the MCP boundary schema. Handlers receive the already-coerced values, so the rest of the code can assume the declared types. The `script` gateway calls handlers from JS where types are preserved natively, so it works either way — but **the boundary path won't work without coercion**, and divergence between the two paths (script accepts string `"true"`, direct rejects it) is itself a parity bug.
+
+When in doubt: write a test pair that calls the tool with the native-typed value AND the string-encoded form and asserts both succeed with identical results — see [TESTING-STRATEGY.md §8a](TESTING-STRATEGY.md#8a-test-tags-cc-n-and-pv-n) for the PV-N tags that pin this contract.
 
 ## Conventions
 

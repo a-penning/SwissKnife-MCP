@@ -5,6 +5,7 @@
 // which re-run it for you).
 import { colorTool } from "./color.js";
 import { convertDataTool } from "./convert-data.js";
+import { cryptoTool } from "./crypto.js";
 import { diffTool } from "./diff.js";
 import { dnsTool } from "./dns.js";
 import { encodeTool } from "./encode.js";
@@ -26,6 +27,7 @@ import type { ToolDef } from "./types.js";
 const everythingElse: ToolDef<any>[] = [
   colorTool,
   convertDataTool,
+  cryptoTool,
   diffTool,
   dnsTool,
   encodeTool,

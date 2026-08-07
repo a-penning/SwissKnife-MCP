@@ -227,12 +227,13 @@ describe("parseRdapIp", () => {
     ],
     ["no addressing fields at all", { name: "X" }, undefined],
   ];
-  it.each(
-    networkCases,
-  )("derives network from %s", (_label, fixture, expected) => {
-    const out = parseRdapIp(fixture, "0.0.0.0");
-    expect(out.network).toBe(expected);
-  });
+  it.each(networkCases)(
+    "derives network from %s",
+    (_label, fixture, expected) => {
+      const out = parseRdapIp(fixture, "0.0.0.0");
+      expect(out.network).toBe(expected);
+    },
+  );
 
   // country / allocationType pass-through and absence.
   it("passes through country and allocationType when present", () => {

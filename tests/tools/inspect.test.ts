@@ -62,11 +62,14 @@ describe("inspect: url", () => {
     // an explicit port equal to the scheme default is normalised away by the
     // WHATWG URL parser (url.port becomes ""), so portIsDefault is true.
     ["https://example.com:443/x", "443", true],
-  ])("port resolution for %s → %s (default:%s)", async (value, port, isDefault) => {
-    const out = await structured({ kind: "url", value });
-    expect(out.port).toBe(port);
-    expect(out.portIsDefault).toBe(isDefault);
-  });
+  ])(
+    "port resolution for %s → %s (default:%s)",
+    async (value, port, isDefault) => {
+      const out = await structured({ kind: "url", value });
+      expect(out.port).toBe(port);
+      expect(out.portIsDefault).toBe(isDefault);
+    },
+  );
   // Punycode <-> Unicode hostname decoding across a range of IDNs.
   it.each<[string, string]>([
     ["https://xn--mnchen-3ya.de/", "münchen.de"],
@@ -290,26 +293,24 @@ liveDescribe("inspect: tls", () => {
 
   // A range of non-https schemes — all rejected OFFLINE (before any socket)
   // with a scheme error. No network involved.
-  it.each([
-    "ftp://example.com",
-    "http://example.com",
-    "ws://example.com",
-  ])("rejects non-https scheme %s with a clear error (offline)", async (value) => {
-    const res = await run({ kind: "tls", value });
-    expect(res.isError).toBe(true);
-    expect(JSON.stringify(res.content)).toContain("scheme");
-  });
+  it.each(["ftp://example.com", "http://example.com", "ws://example.com"])(
+    "rejects non-https scheme %s with a clear error (offline)",
+    async (value) => {
+      const res = await run({ kind: "tls", value });
+      expect(res.isError).toBe(true);
+      expect(JSON.stringify(res.content)).toContain("scheme");
+    },
+  );
 
   // Malformed host:port forms rejected OFFLINE on the port-range check —
   // no socket is opened. These do not introduce a network dependency.
-  it.each([
-    "example.com:99999",
-    "example.com:0",
-    "ftp://example.com:21",
-  ])("rejects malformed/invalid target %s offline", async (value) => {
-    const res = await run({ kind: "tls", value });
-    expect(res.isError).toBe(true);
-  });
+  it.each(["example.com:99999", "example.com:0", "ftp://example.com:21"])(
+    "rejects malformed/invalid target %s offline",
+    async (value) => {
+      const res = await run({ kind: "tls", value });
+      expect(res.isError).toBe(true);
+    },
+  );
 
   it("times out cleanly when the host is unreachable", async () => {
     // TEST-NET-1 (192.0.2.x, RFC 5737) is reserved and unrouteable.
@@ -374,15 +375,14 @@ liveDescribe("inspect: whois", () => {
 
   // Octal/leading-zero IPv4 bypass attempts are rejected OFFLINE during
   // classification (before any socket) with a leading-zero hint.
-  it.each([
-    "010.0.0.1",
-    "192.168.001.1",
-    "0177.0.0.1",
-  ])("rejects octal-bypass IPv4 %s before any network call", async (value) => {
-    const res = await run({ kind: "whois", value });
-    expect(res.isError).toBe(true);
-    expect(JSON.stringify(res.content)).toMatch(/leading-zero/);
-  });
+  it.each(["010.0.0.1", "192.168.001.1", "0177.0.0.1"])(
+    "rejects octal-bypass IPv4 %s before any network call",
+    async (value) => {
+      const res = await run({ kind: "whois", value });
+      expect(res.isError).toBe(true);
+      expect(JSON.stringify(res.content)).toMatch(/leading-zero/);
+    },
+  );
 
   // A range of targets that classify as none of domain/IP/ASN → OFFLINE
   // rejection (the classifier throws before contacting any whois server).
@@ -400,9 +400,12 @@ liveDescribe("inspect: whois", () => {
   it.each<[string, "domain" | "asn", RegExp]>([
     ["15169", "domain", /invalid domain/], // looks ASN; forced domain
     ["not-a-number", "asn", /invalid ASN/], // forced ASN, not numeric
-  ])("whoisTarget=%s override on %s fails offline", async (value, whoisTarget, re) => {
-    const res = await run({ kind: "whois", value, whoisTarget });
-    expect(res.isError).toBe(true);
-    expect(JSON.stringify(res.content)).toMatch(re);
-  });
+  ])(
+    "whoisTarget=%s override on %s fails offline",
+    async (value, whoisTarget, re) => {
+      const res = await run({ kind: "whois", value, whoisTarget });
+      expect(res.isError).toBe(true);
+      expect(JSON.stringify(res.content)).toMatch(re);
+    },
+  );
 });

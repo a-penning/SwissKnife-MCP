@@ -69,27 +69,23 @@ describe("http: DNS-rebinding / origin guard (default loopback allow-list)", () 
 
   // Loopback hostnames are always allowed, regardless of port (the rebinding
   // threat is the foreign *hostname*, not the port the client used).
-  it.each([
-    "localhost",
-    "127.0.0.1",
-    "127.0.0.1:9999",
-    "[::1]",
-  ])("allows POST /mcp with Host %j and no Origin", async (host) => {
-    const { status } = await request(port, { host });
-    expect(status).not.toBe(403);
-  });
+  it.each(["localhost", "127.0.0.1", "127.0.0.1:9999", "[::1]"])(
+    "allows POST /mcp with Host %j and no Origin",
+    async (host) => {
+      const { status } = await request(port, { host });
+      expect(status).not.toBe(403);
+    },
+  );
 
   // A page served from any other hostname that resolves to loopback/LAN must be
   // rejected — this is the rebinding/CSRF defense.
-  it.each([
-    "evil.com",
-    "attacker.test",
-    "169.254.169.254",
-    "example.com",
-  ])("rejects POST /mcp with foreign Host %j", async (host) => {
-    const { status } = await request(port, { host });
-    expect(status).toBe(403);
-  });
+  it.each(["evil.com", "attacker.test", "169.254.169.254", "example.com"])(
+    "rejects POST /mcp with foreign Host %j",
+    async (host) => {
+      const { status } = await request(port, { host });
+      expect(status).toBe(403);
+    },
+  );
 
   it("rejects an allowed Host when an Origin is present and not allow-listed", async () => {
     const { status } = await request(port, {
@@ -104,17 +100,17 @@ describe("http: DNS-rebinding / origin guard (default loopback allow-list)", () 
     expect(status).not.toBe(403);
   });
 
-  it.each([
-    "/",
-    "/healthz",
-  ])("does not guard GET %j (foreign Host still served)", async (path) => {
-    const { status } = await request(port, {
-      host: "evil.com",
-      method: "GET",
-      path,
-    });
-    expect(status).toBe(200);
-  });
+  it.each(["/", "/healthz"])(
+    "does not guard GET %j (foreign Host still served)",
+    async (path) => {
+      const { status } = await request(port, {
+        host: "evil.com",
+        method: "GET",
+        path,
+      });
+      expect(status).toBe(200);
+    },
+  );
 });
 
 describe("http: origin guard with explicit allow-lists", () => {

@@ -163,16 +163,17 @@ describe("http: requests", () => {
     "DELETE",
     "OPTIONS",
   ];
-  it.each(
-    bodyMethods,
-  )("%s sends a text body to the echo route", async (method) => {
-    const out = await structured({
-      url: `${baseUrl}/echo`,
-      method,
-      body: "payload!",
-    });
-    expect(out.json).toMatchObject({ method, body: "payload!" });
-  });
+  it.each(bodyMethods)(
+    "%s sends a text body to the echo route",
+    async (method) => {
+      const out = await structured({
+        url: `${baseUrl}/echo`,
+        method,
+        body: "payload!",
+      });
+      expect(out.json).toMatchObject({ method, body: "payload!" });
+    },
+  );
 
   // requestBodyEncoding range: utf8 sends verbatim; base64 is decoded first.
   const bodyEncodings: Array<["utf8" | "base64", string, string]> = [
@@ -180,17 +181,18 @@ describe("http: requests", () => {
     ["base64", Buffer.from("hello").toString("base64"), "hello"],
     ["base64", Buffer.from("a/b+c=").toString("base64"), "a/b+c="],
   ];
-  it.each(
-    bodyEncodings,
-  )("requestBodyEncoding=%s decodes the body before sending", async (requestBodyEncoding, body, expected) => {
-    const out = await structured({
-      url: `${baseUrl}/echo`,
-      method: "POST",
-      body,
-      requestBodyEncoding,
-    });
-    expect((out.json as { body: string }).body).toBe(expected);
-  });
+  it.each(bodyEncodings)(
+    "requestBodyEncoding=%s decodes the body before sending",
+    async (requestBodyEncoding, body, expected) => {
+      const out = await structured({
+        url: `${baseUrl}/echo`,
+        method: "POST",
+        body,
+        requestBodyEncoding,
+      });
+      expect((out.json as { body: string }).body).toBe(expected);
+    },
+  );
 
   it("jsonBody serializes and sets content-type", async () => {
     const out = await structured({
@@ -214,13 +216,14 @@ describe("http: requests", () => {
     ["/teapot", 418, false],
     ["/servererror", 500, false],
   ];
-  it.each(
-    statusCases,
-  )("%s -> status %d (ok=%s), surfaced as a result not an error", async (path, status, ok) => {
-    const out = await structured({ url: `${baseUrl}${path}` });
-    expect(out.status).toBe(status);
-    expect(out.ok).toBe(ok);
-  });
+  it.each(statusCases)(
+    "%s -> status %d (ok=%s), surfaced as a result not an error",
+    async (path, status, ok) => {
+      const out = await structured({ url: `${baseUrl}${path}` });
+      expect(out.status).toBe(status);
+      expect(out.ok).toBe(ok);
+    },
+  );
 
   it("non-2xx is a result, not an error", async () => {
     const out = await structured({ url: `${baseUrl}/teapot` });

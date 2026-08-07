@@ -48,14 +48,13 @@ describe("guardedFetch: SSRF guard on (pinned connector)", () => {
   // The connector resolves the hostname and refuses the connection when the
   // resolved address is private/loopback — the address screened is the one
   // dialled, so a rebinding flip cannot slip past.
-  it.each([
-    "localhost",
-    "LOCALHOST",
-    "localhost.",
-  ])("refuses a host (%j) that resolves to a loopback address", async (host) => {
-    process.env[ENV] = "1";
-    await expect(guardedFetch(`http://${host}:${port}/`)).rejects.toThrow();
-  });
+  it.each(["localhost", "LOCALHOST", "localhost."])(
+    "refuses a host (%j) that resolves to a loopback address",
+    async (host) => {
+      process.env[ENV] = "1";
+      await expect(guardedFetch(`http://${host}:${port}/`)).rejects.toThrow();
+    },
+  );
 
   it("surfaces the SSRF reason in the error message", async () => {
     process.env[ENV] = "1";

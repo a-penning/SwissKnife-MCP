@@ -68,16 +68,14 @@ describe("encode: base64 (RFC 4648)", () => {
     expect(text(res)).toContain(`offset ${offset}`);
   });
   // Lengths that aren't a multiple of 4 cannot be a valid base64 quantum.
-  it.each([
-    "Zm9vY",
-    "Zm9vYg",
-    "A",
-    "AB",
-  ])("rejects bad padding length %j", async (input) => {
-    const res = await run({ direction: "decode", format: "base64", input });
-    expect(res.isError).toBe(true);
-    expect(text(res)).toContain("multiple of 4");
-  });
+  it.each(["Zm9vY", "Zm9vYg", "A", "AB"])(
+    "rejects bad padding length %j",
+    async (input) => {
+      const res = await run({ direction: "decode", format: "base64", input });
+      expect(res.isError).toBe(true);
+      expect(text(res)).toContain("multiple of 4");
+    },
+  );
 });
 
 describe("encode: base32 (RFC 4648)", () => {
@@ -105,15 +103,14 @@ describe("encode: base32 (RFC 4648)", () => {
   });
   // Final-quantum lengths of 1/3/6 (after stripping padding) leave stray bits
   // no base32 char could have produced — malformed per RFC 4648 §6.
-  it.each([
-    "A=======",
-    "MZX=====",
-    "MZXW6Y==",
-  ])("rejects invalid final-quantum length %j", async (input) => {
-    const res = await run({ direction: "decode", format: "base32", input });
-    expect(res.isError).toBe(true);
-    expect(text(res)).toMatch(/final quantum|valid RFC 4648 length/);
-  });
+  it.each(["A=======", "MZX=====", "MZXW6Y=="])(
+    "rejects invalid final-quantum length %j",
+    async (input) => {
+      const res = await run({ direction: "decode", format: "base32", input });
+      expect(res.isError).toBe(true);
+      expect(text(res)).toMatch(/final quantum|valid RFC 4648 length/);
+    },
+  );
 });
 
 describe("encode: base64url", () => {
@@ -149,13 +146,17 @@ describe("encode: base64url", () => {
   });
   // length % 4 === 1 encodes a fractional byte — rejected, never "decode to
   // empty".
-  it.each([
-    "A",
-    "Zm9vYg==Q",
-  ])("rejects %j (cannot encode a whole number of bytes)", async (input) => {
-    const res = await run({ direction: "decode", format: "base64url", input });
-    expect(res.isError).toBe(true);
-  });
+  it.each(["A", "Zm9vYg==Q"])(
+    "rejects %j (cannot encode a whole number of bytes)",
+    async (input) => {
+      const res = await run({
+        direction: "decode",
+        format: "base64url",
+        input,
+      });
+      expect(res.isError).toBe(true);
+    },
+  );
 });
 
 describe("encode: hex", () => {
@@ -235,19 +236,17 @@ describe("encode: url", () => {
     ).toBe(plain);
   });
   // A range of malformed percent-escapes: truncated, non-hex digits.
-  it.each([
-    "a%2",
-    "a%",
-    "%G0",
-    "%2Q",
-  ])("rejects malformed percent-encoding %j", async (input) => {
-    const res = await run({
-      direction: "decode",
-      format: "url-component",
-      input,
-    });
-    expect(res.isError).toBe(true);
-  });
+  it.each(["a%2", "a%", "%G0", "%2Q"])(
+    "rejects malformed percent-encoding %j",
+    async (input) => {
+      const res = await run({
+        direction: "decode",
+        format: "url-component",
+        input,
+      });
+      expect(res.isError).toBe(true);
+    },
+  );
 });
 
 describe("encode: html", () => {
@@ -424,19 +423,20 @@ describe("encode: radix", () => {
       16,
       "100000000000000000000000000000000",
     ],
-  ] as Array<
-    [string, number, number, string]
-  >)("converts %j base %i → %i", async (input, radixFrom, radixTo, expected) => {
-    expect(
-      await result({
-        direction: "encode",
-        format: "radix",
-        input,
-        radixFrom,
-        radixTo,
-      }),
-    ).toBe(expected);
-  });
+  ] as Array<[string, number, number, string]>)(
+    "converts %j base %i → %i",
+    async (input, radixFrom, radixTo, expected) => {
+      expect(
+        await result({
+          direction: "encode",
+          format: "radix",
+          input,
+          radixFrom,
+          radixTo,
+        }),
+      ).toBe(expected);
+    },
+  );
   // A digit must be valid for the SOURCE base. "129" has a 9 in base 2, "g" is
   // not a base-16 digit, "8" is not octal.
   it.each([
@@ -455,19 +455,18 @@ describe("encode: radix", () => {
     expect(text(res)).toContain(msg);
   });
   // Both radixFrom and radixTo are required; missing either is an error.
-  it.each([
-    [{ radixFrom: 10 }],
-    [{ radixTo: 16 }],
-    [{}],
-  ])("requires radixFrom/radixTo (%o)", async (radices) => {
-    const res = await run({
-      direction: "encode",
-      format: "radix",
-      input: "255",
-      ...radices,
-    });
-    expect(res.isError).toBe(true);
-  });
+  it.each([[{ radixFrom: 10 }], [{ radixTo: 16 }], [{}]])(
+    "requires radixFrom/radixTo (%o)",
+    async (radices) => {
+      const res = await run({
+        direction: "encode",
+        format: "radix",
+        input: "255",
+        ...radices,
+      });
+      expect(res.isError).toBe(true);
+    },
+  );
 });
 
 describe("encode: binary chaining", () => {
@@ -640,18 +639,19 @@ describe("encode: compression hex output", () => {
   // Every compression format can emit hex; output is pure lowercase hex and
   // round-trips back to the original via hex inputEncoding... well, base64 on
   // decode — here we just assert the hex shape per format.
-  it.each(["gzip", "deflate", "brotli"] as Array<
-    Args["format"]
-  >)("returns compressed bytes as hex for %s", async (format) => {
-    const hex = await result({
-      direction: "encode",
-      format,
-      input: "x",
-      outputEncoding: "hex",
-    });
-    expect(hex).toMatch(/^[0-9a-f]+$/);
-    expect(hex.length % 2).toBe(0);
-  });
+  it.each(["gzip", "deflate", "brotli"] as Array<Args["format"]>)(
+    "returns compressed bytes as hex for %s",
+    async (format) => {
+      const hex = await result({
+        direction: "encode",
+        format,
+        input: "x",
+        outputEncoding: "hex",
+      });
+      expect(hex).toMatch(/^[0-9a-f]+$/);
+      expect(hex.length % 2).toBe(0);
+    },
+  );
 });
 
 describe("encode: batch input", () => {
@@ -704,20 +704,23 @@ describe("encode: batch input", () => {
     [["!!!", "Zm9v"], [0]], // bad first
     [["Zm9v", "!!!"], [1]], // bad last
     [["Zm9v", "@@@", "YmFy"], [1]], // bad middle
-  ])("batch isolates bad items into failures (input %j, bad %j)", async (input, badIndices) => {
-    const res = await run({
-      direction: "decode",
-      format: "base64",
-      input,
-    });
-    expect(res.isError, JSON.stringify(res.content)).toBeFalsy();
-    const s = res.structuredContent as {
-      results: unknown[];
-      failures: Array<{ index: number }>;
-    };
-    expect(s.results).toHaveLength(input.length - badIndices.length);
-    expect(s.failures.map((f) => f.index).sort()).toEqual(badIndices);
-  });
+  ])(
+    "batch isolates bad items into failures (input %j, bad %j)",
+    async (input, badIndices) => {
+      const res = await run({
+        direction: "decode",
+        format: "base64",
+        input,
+      });
+      expect(res.isError, JSON.stringify(res.content)).toBeFalsy();
+      const s = res.structuredContent as {
+        results: unknown[];
+        failures: Array<{ index: number }>;
+      };
+      expect(s.results).toHaveLength(input.length - badIndices.length);
+      expect(s.failures.map((f) => f.index).sort()).toEqual(badIndices);
+    },
+  );
 });
 
 describe("encode: compression compatibility guards", () => {
@@ -776,14 +779,15 @@ describe("encode: byteLength reports OUTPUT bytes (CC-9)", () => {
     ["hex", "x", 2],
     ["hex", "hi", 4],
     ["base32", "foo", 8],
-  ] as Array<
-    [Args["format"], string, number]
-  >)("%s encode of %j reports output byteLength %i", async (format, input, expected) => {
-    const res = await run({ direction: "encode", format, input });
-    expect((res.structuredContent as { byteLength: number }).byteLength).toBe(
-      expected,
-    );
-  });
+  ] as Array<[Args["format"], string, number]>)(
+    "%s encode of %j reports output byteLength %i",
+    async (format, input, expected) => {
+      const res = await run({ direction: "encode", format, input });
+      expect((res.structuredContent as { byteLength: number }).byteLength).toBe(
+        expected,
+      );
+    },
+  );
 });
 
 describe("encode: html entity table", () => {

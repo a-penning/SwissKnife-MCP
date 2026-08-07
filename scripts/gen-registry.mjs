@@ -67,9 +67,21 @@ function generate() {
   const tools = entries.filter((e) => e.kind === "tool");
   const factories = entries.filter((e) => e.kind === "factory");
 
-  const importLines = entries
-    .map((e) => `import { ${e.exportName} } from "./${e.fileBase}.js";`)
-    .join("\n");
+  // Sort the ToolDef type import inline with the tool imports by module path
+  // rather than pinning it last: pinning breaks biome's import order the moment
+  // a tool file sorts after "types.js" (none today, but e.g. a "wait" tool
+  // would). The ASCII compare below matches biome only for the all-lowercase
+  // specifiers we have; registry-sync.test.ts guards against any drift.
+  const imports = entries.map((e) => ({
+    path: `./${e.fileBase}.js`,
+    line: `import { ${e.exportName} } from "./${e.fileBase}.js";`,
+  }));
+  imports.push({
+    path: "./types.js",
+    line: `import type { ToolDef } from "./types.js";`,
+  });
+  imports.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  const importLines = imports.map((i) => i.line).join("\n");
 
   const toolListLines = tools.map((t) => `  ${t.exportName},`).join("\n");
   const factoryComposition = factories
@@ -82,7 +94,6 @@ function generate() {
 // then run \`npm run gen:registry\` (or any of prebuild/pretest/predev,
 // which re-run it for you).
 ${importLines}
-import type { ToolDef } from "./types.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: heterogeneous tool shapes
 const everythingElse: ToolDef<any>[] = [

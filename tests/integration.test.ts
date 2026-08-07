@@ -69,6 +69,7 @@ describe("integration: server surface", () => {
         "script",
         "text",
         "time",
+        "wait",
       ]);
       for (const tool of tools) {
         expect(tool.description, tool.name).toBeTruthy();
@@ -238,6 +239,16 @@ describe("integration: one happy path per tool", () => {
         result:
           "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
         toolCalls: 1,
+      });
+
+      const wait = await call(client, "wait", {
+        amount: 5,
+        unit: "milliseconds",
+      });
+      expect(wait.isError).toBeFalsy();
+      expect(wait.structuredContent).toMatchObject({
+        requestedMs: 5,
+        unit: "milliseconds",
       });
     } finally {
       await client.close();

@@ -22,6 +22,7 @@ import { buildScriptTool } from "./script.js";
 import { textTool } from "./text.js";
 import { timeTool } from "./time.js";
 import type { ToolDef } from "./types.js";
+import { waitTool } from "./wait.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: heterogeneous tool shapes
 const everythingElse: ToolDef<any>[] = [
@@ -42,6 +43,7 @@ const everythingElse: ToolDef<any>[] = [
   regexTool,
   textTool,
   timeTool,
+  waitTool,
 ];
 
 // Factory tools are appended last so they can dispatch into every other

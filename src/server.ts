@@ -27,35 +27,36 @@ const RENAMED_PARAMS: Record<string, Record<string, string>> = {
 export function buildServer(): McpServer {
   const server = new McpServer({ name: "swissknife", version: VERSION });
   for (const tool of tools) {
-    // Pre-check the raw payload BEFORE Zod runs its strip/parse pass —
-    // otherwise either (a) `.strict()` rejects the unknown key with a
-    // generic message before we can surface the rename hint, or (b)
-    // `.passthrough()` lets the now-missing-required-field error fire
-    // first and the refinement on the unknown key never gets a chance.
-    const knownKeys = new Set(Object.keys(tool.inputSchema));
     const renames = RENAMED_PARAMS[tool.name] ?? {};
-    const objectSchema = z.object(tool.inputSchema);
-    // Action-specific / cross-field rules are enforced here so an invalid
-    // combination is rejected at the boundary before the handler runs.
-    const refined = tool.refine
+    // A `.strict()` ZodObject rejects unknown keys (a typo or renamed-away
+    // param) instead of silently stripping them, and — unlike the earlier
+    // `z.preprocess` wrapper — stays object-typed, so the SDK can introspect
+    // its shape and advertise real JSON-Schema properties in `tools/list`
+    // (the preprocess wrapper produced an empty schema, hiding every param).
+    // The `error` hook rewrites the unknown-key message into a migration hint
+    // when the key is a known rename.
+    const objectSchema = z
+      .object(tool.inputSchema, {
+        error: (issue) => {
+          if (issue.code === "unrecognized_keys") {
+            for (const key of issue.keys ?? []) {
+              const renamed = renames[key];
+              if (renamed)
+                return `\`${key}\` was renamed to \`${renamed}\` — update your call`;
+            }
+          }
+          return undefined;
+        },
+      })
+      .strict();
+    // Cross-field / action-specific rules run at the boundary before the
+    // handler. Zod 4 refinements keep the schema object-typed, so this does
+    // NOT re-break JSON-Schema introspection the way a wrapper would.
+    const finalInput = tool.refine
       ? objectSchema.superRefine(
           tool.refine as (arg: unknown, ctx: z.core.$RefinementCtx) => void,
         )
       : objectSchema;
-    const finalInput = z.preprocess((raw) => {
-      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-        for (const key of Object.keys(raw as Record<string, unknown>)) {
-          if (knownKeys.has(key)) continue;
-          const renamed = renames[key];
-          throw new Error(
-            renamed
-              ? `\`${key}\` was renamed to \`${renamed}\` — update your call`
-              : `unrecognized key: \`${key}\``,
-          );
-        }
-      }
-      return raw;
-    }, refined);
     server.registerTool(
       tool.name,
       {

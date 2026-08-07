@@ -5,6 +5,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/http.js";
+import { tools as toolDefs } from "../src/tools/registry.js";
 
 let server: Server;
 let baseUrl: string;
@@ -71,6 +72,32 @@ describe("integration: server surface", () => {
       for (const tool of tools) {
         expect(tool.description, tool.name).toBeTruthy();
         expect(tool.inputSchema, tool.name).toBeTruthy();
+      }
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("advertises each tool's params as JSON-Schema properties (schema-loss guard)", async () => {
+    // Regression guard: wrapping a tool's input schema in a z.preprocess/
+    // effects schema makes the SDK advertise `properties: {}` — every param
+    // becomes invisible to clients even though `inputSchema` is still present
+    // (so the truthiness check above passes). Assert the advertised properties
+    // match each tool's declared shape keys exactly, through the real
+    // tools/list path, so that failure mode can never ship silently again.
+    const client = await connect();
+    try {
+      const { tools } = await client.listTools();
+      const byName = new Map(tools.map((t) => [t.name, t]));
+      for (const def of toolDefs) {
+        const advertised = byName.get(def.name);
+        const props = Object.keys(
+          (advertised?.inputSchema?.properties as
+            | Record<string, unknown>
+            | undefined) ?? {},
+        );
+        const declared = Object.keys(def.inputSchema);
+        expect(props.sort(), def.name).toEqual(declared.sort());
       }
     } finally {
       await client.close();
